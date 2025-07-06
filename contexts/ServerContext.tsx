@@ -1,10 +1,46 @@
-// contexts/ServerContext.tsx - Contexto de Servidores COMPLETO
-import React, { createContext, useContext, useReducer, useEffect } from 'react';
-import { Server, ServerStatus } from '../services/types';
-import { sshService } from '../services/sshService';
+// contexts/ServerContext.tsx - CORRIGIDO PARA FIREBASE
+import { ref, remove, set } from 'firebase/database';
+import {
+  addDoc,
+  collection,
+  deleteDoc,
+  doc,
+  getDocs,
+  orderBy,
+  query,
+  Timestamp,
+  updateDoc,
+  where
+} from 'firebase/firestore';
+import React, { createContext, useContext, useEffect, useReducer } from 'react';
+import { COLLECTIONS, db, realtimeDb, RTDB_PATHS } from '../services/firebase';
 import { useAuth } from './AuthContext';
 import { useNotifications } from './NotificationContext';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+
+// Tipos básicos (simplificados)
+interface Server {
+  id: string;
+  name: string;
+  host: string;
+  port: number;
+  username: string;
+  description?: string;
+  tags: string[];
+  isActive: boolean;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+interface ServerStatus {
+  serverId: string;
+  isOnline: boolean;
+  cpuUsage: number;
+  memoryUsage: number;
+  diskUsage: number;
+  uptime: number;
+  lastCheck: Date;
+  services: any[];
+}
 
 interface ServerState {
   servers: Server[];
@@ -33,11 +69,11 @@ function serverReducer(state: ServerState, action: ServerAction): ServerState {
     case 'SET_SERVERS':
       return { ...state, servers: action.payload };
     case 'ADD_SERVER':
-      return { ...state, servers: [...state.servers, action.payload] };
+      return { ...state, servers: [action.payload, ...state.servers] };
     case 'UPDATE_SERVER':
       return {
         ...state,
-        servers: state.servers.map(s => 
+        servers: state.servers.map(s =>
           s.id === action.payload.id ? action.payload : s
         )
       };
@@ -93,106 +129,85 @@ export function ServerProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     if (user) {
       loadServers();
-      
-      // Add some example servers for demo
-      setTimeout(() => {
-        addExampleServers();
-      }, 1000);
     }
   }, [user]);
 
-  const addExampleServers = async () => {
-    if (state.servers.length === 0) {
-      const exampleServers = [
-        {
-          name: 'Servidor de Produção',
-          host: '192.168.1.100',
-          port: 22,
-          username: 'root',
-          password: 'encrypted_password_here',
-          description: 'Servidor principal de produção',
-          tags: ['production', 'web'],
-          isActive: true,
-        },
-        {
-          name: 'Servidor de Desenvolvimento',
-          host: '192.168.1.101',
-          port: 22,
-          username: 'dev',
-          password: 'encrypted_password_here',
-          description: 'Servidor para desenvolvimento e testes',
-          tags: ['development', 'testing'],
-          isActive: true,
-        },
-        {
-          name: 'Banco de Dados',
-          host: '192.168.1.102',
-          port: 22,
-          username: 'dbadmin',
-          password: 'encrypted_password_here',
-          description: 'Servidor de banco de dados MySQL',
-          tags: ['database', 'mysql'],
-          isActive: true,
-        },
-      ];
-
-      for (const serverData of exampleServers) {
-        await addServer(serverData);
-      }
-    }
-  };
-
   const loadServers = async () => {
+    if (!user) return;
+
     try {
       dispatch({ type: 'SET_LOADING', payload: true });
-      const stored = await AsyncStorage.getItem(`servers_${user?.uid}`);
-      if (stored) {
-        const servers = JSON.parse(stored).map((s: any) => ({
-          ...s,
-          createdAt: new Date(s.createdAt),
-          updatedAt: new Date(s.updatedAt),
-        }));
-        dispatch({ type: 'SET_SERVERS', payload: servers });
-      }
+
+      const q = query(
+        collection(db, COLLECTIONS.SERVERS),
+        where('userId', '==', user.uid),
+        orderBy('createdAt', 'desc')
+      );
+
+      const querySnapshot = await getDocs(q);
+      const servers: Server[] = [];
+
+      querySnapshot.forEach((doc) => {
+        const data = doc.data();
+        const server: Server = {
+          id: doc.id,
+          name: data.name,
+          host: data.host,
+          port: data.port,
+          username: data.username,
+          description: data.description || '',
+          tags: data.tags || [],
+          isActive: data.isActive,
+          createdAt: data.createdAt.toDate(),
+          updatedAt: data.updatedAt.toDate(),
+        };
+        servers.push(server);
+      });
+
+      dispatch({ type: 'SET_SERVERS', payload: servers });
+      console.log(`Carregados ${servers.length} servidores`);
+
     } catch (error) {
-      console.error('Error loading servers:', error);
+      console.error('Erro ao carregar servidores:', error);
       dispatch({ type: 'SET_ERROR', payload: 'Erro ao carregar servidores' });
     } finally {
       dispatch({ type: 'SET_LOADING', payload: false });
     }
   };
 
-  const saveServers = async (servers: Server[]) => {
-    try {
-      await AsyncStorage.setItem(`servers_${user?.uid}`, JSON.stringify(servers));
-    } catch (error) {
-      console.error('Error saving servers:', error);
-    }
-  };
-
   const addServer = async (serverData: Omit<Server, 'id' | 'createdAt' | 'updatedAt'>) => {
+    if (!user) throw new Error('Usuário não autenticado');
+
     try {
       dispatch({ type: 'SET_LOADING', payload: true });
-      
-      const newServer: Server = {
+
+      const docData = {
         ...serverData,
-        id: Date.now().toString() + Math.random().toString(36).substr(2, 9),
+        userId: user.uid,
+        createdAt: Timestamp.now(),
+        updatedAt: Timestamp.now(),
+      };
+
+      const docRef = await addDoc(collection(db, COLLECTIONS.SERVERS), docData);
+
+      const newServer: Server = {
+        id: docRef.id,
+        ...serverData,
         createdAt: new Date(),
         updatedAt: new Date(),
       };
-      
+
       dispatch({ type: 'ADD_SERVER', payload: newServer });
-      
-      const updatedServers = [...state.servers, newServer];
-      await saveServers(updatedServers);
-      
-      // Test connection after adding
+
+      // Testar status do servidor
       setTimeout(() => {
         getServerStatus(newServer.id);
-      }, 500);
-      
+      }, 1000);
+
+      console.log('Servidor adicionado:', newServer.name);
+
     } catch (error) {
-      console.error('Error adding server:', error);
+      console.error('Erro ao adicionar servidor:', error);
       dispatch({ type: 'SET_ERROR', payload: 'Erro ao adicionar servidor' });
       throw error;
     } finally {
@@ -201,23 +216,35 @@ export function ServerProvider({ children }: { children: React.ReactNode }) {
   };
 
   const updateServer = async (server: Server) => {
+    if (!user) throw new Error('Usuário não autenticado');
+
     try {
       dispatch({ type: 'SET_LOADING', payload: true });
-      
+
+      const serverRef = doc(db, COLLECTIONS.SERVERS, server.id);
+      const updateData = {
+        name: server.name,
+        host: server.host,
+        port: server.port,
+        username: server.username,
+        description: server.description,
+        tags: server.tags,
+        isActive: server.isActive,
+        updatedAt: Timestamp.now(),
+      };
+
+      await updateDoc(serverRef, updateData);
+
       const updatedServer = {
         ...server,
         updatedAt: new Date(),
       };
-      
+
       dispatch({ type: 'UPDATE_SERVER', payload: updatedServer });
-      
-      const updatedServers = state.servers.map(s => 
-        s.id === server.id ? updatedServer : s
-      );
-      await saveServers(updatedServers);
-      
+      console.log('Servidor atualizado:', server.name);
+
     } catch (error) {
-      console.error('Error updating server:', error);
+      console.error('Erro ao atualizar servidor:', error);
       dispatch({ type: 'SET_ERROR', payload: 'Erro ao atualizar servidor' });
       throw error;
     } finally {
@@ -226,17 +253,24 @@ export function ServerProvider({ children }: { children: React.ReactNode }) {
   };
 
   const deleteServer = async (id: string) => {
+    if (!user) throw new Error('Usuário não autenticado');
+
     try {
       dispatch({ type: 'SET_LOADING', payload: true });
-      
+
+      // Remover do Firestore
+      await deleteDoc(doc(db, COLLECTIONS.SERVERS, id));
+
+      // Remover status do Realtime Database
+      const statusRef = ref(realtimeDb, `${RTDB_PATHS.SERVER_STATUS}/${id}`);
+      await remove(statusRef);
+
       dispatch({ type: 'DELETE_SERVER', payload: id });
-      
-      const updatedServers = state.servers.filter(s => s.id !== id);
-      await saveServers(updatedServers);
-      
+      console.log('Servidor deletado:', id);
+
     } catch (error) {
-      console.error('Error deleting server:', error);
-      dispatch({ type: 'SET_ERROR', payload: 'Erro ao excluir servidor' });
+      console.error('Erro ao deletar servidor:', error);
+      dispatch({ type: 'SET_ERROR', payload: 'Erro ao deletar servidor' });
       throw error;
     } finally {
       dispatch({ type: 'SET_LOADING', payload: false });
@@ -248,61 +282,45 @@ export function ServerProvider({ children }: { children: React.ReactNode }) {
       const server = state.servers.find(s => s.id === id);
       if (!server) return;
 
-      const credentials = {
-        host: server.host,
-        port: server.port,
-        username: server.username,
-        password: server.password, // In real app, decrypt this
-        privateKey: server.privateKey,
+      // Simular obtenção de status (substituir por chamada real à API)
+      const mockStatus: ServerStatus = {
+        serverId: id,
+        isOnline: Math.random() > 0.3, // 70% chance de estar online
+        cpuUsage: Math.random() * 100,
+        memoryUsage: Math.random() * 100,
+        diskUsage: Math.random() * 100,
+        uptime: Math.floor(Math.random() * 1000000),
+        lastCheck: new Date(),
+        services: []
       };
 
-      const status = await sshService.getServerStatus(credentials);
-      status.serverId = id;
+      // Salvar no Realtime Database
+      const statusRef = ref(realtimeDb, `${RTDB_PATHS.SERVER_STATUS}/${id}`);
+      await set(statusRef, {
+        ...mockStatus,
+        lastCheck: mockStatus.lastCheck.toISOString()
+      });
 
-      // Check for status changes and send notifications
+      dispatch({
+        type: 'SET_SERVER_STATUS',
+        payload: { serverId: id, status: mockStatus }
+      });
+
+      // Verificar mudanças de status e enviar notificações
       const previousStatus = state.serverStatuses[id];
-      
-      if (previousStatus && previousStatus.isOnline !== status.isOnline) {
+
+      if (previousStatus && previousStatus.isOnline !== mockStatus.isOnline) {
         await sendLocalNotification(
-          status.isOnline ? 'Servidor Online' : 'Servidor Offline',
-          `${server.name} está ${status.isOnline ? 'online' : 'offline'} agora`,
+          mockStatus.isOnline ? 'Servidor Online' : 'Servidor Offline',
+          `${server.name} está ${mockStatus.isOnline ? 'online' : 'offline'} agora`,
           { serverId: id, type: 'status_change' }
         );
       }
 
-      // Check for high usage alerts
-      if (status.isOnline) {
-        if (status.cpuUsage > 90) {
-          await sendLocalNotification(
-            'Alto Uso de CPU',
-            `${server.name}: CPU em ${status.cpuUsage.toFixed(1)}%`,
-            { serverId: id, type: 'high_cpu' }
-          );
-        }
-
-        if (status.memoryUsage > 90) {
-          await sendLocalNotification(
-            'Alto Uso de Memória',
-            `${server.name}: Memória em ${status.memoryUsage.toFixed(1)}%`,
-            { serverId: id, type: 'high_memory' }
-          );
-        }
-
-        if (status.diskUsage > 90) {
-          await sendLocalNotification(
-            'Disco Quase Cheio',
-            `${server.name}: Disco em ${status.diskUsage.toFixed(1)}%`,
-            { serverId: id, type: 'disk_space' }
-          );
-        }
-      }
-
-      dispatch({ type: 'SET_SERVER_STATUS', payload: { serverId: id, status } });
-      
     } catch (error) {
-      console.error(`Error getting status for server ${id}:`, error);
-      
-      // Set server as offline on error
+      console.error('Erro ao obter status do servidor:', error);
+
+      // Status offline em caso de erro
       const offlineStatus: ServerStatus = {
         serverId: id,
         isOnline: false,
@@ -311,23 +329,25 @@ export function ServerProvider({ children }: { children: React.ReactNode }) {
         diskUsage: 0,
         uptime: 0,
         lastCheck: new Date(),
-        services: [],
-        runningServices: 0,
+        services: []
       };
-      
-      dispatch({ type: 'SET_SERVER_STATUS', payload: { serverId: id, status: offlineStatus } });
+
+      dispatch({
+        type: 'SET_SERVER_STATUS',
+        payload: { serverId: id, status: offlineStatus }
+      });
     }
   };
 
   const refreshAllStatuses = async () => {
     try {
       dispatch({ type: 'SET_LOADING', payload: true });
-      
+
       const promises = state.servers.map(server => getServerStatus(server.id));
       await Promise.all(promises);
-      
+
     } catch (error) {
-      console.error('Error refreshing all statuses:', error);
+      console.error('Erro ao atualizar status dos servidores:', error);
       dispatch({ type: 'SET_ERROR', payload: 'Erro ao atualizar status dos servidores' });
     } finally {
       dispatch({ type: 'SET_LOADING', payload: false });
@@ -353,7 +373,7 @@ export function ServerProvider({ children }: { children: React.ReactNode }) {
 export function useServers() {
   const context = useContext(ServerContext);
   if (!context) {
-    throw new Error('useServers must be used within ServerProvider');
+    throw new Error('useServers deve ser usado dentro de ServerProvider');
   }
   return context;
 }

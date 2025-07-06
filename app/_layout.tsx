@@ -1,11 +1,11 @@
-// app/_layout.tsx - Layout Raiz COMPLETO
+// app/_layout.tsx - Layout Raiz MELHORADO
 import { NotificationProvider } from '@/contexts/NotificationContext';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { useFonts } from 'expo-font';
 import { Stack } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { StatusBar } from 'expo-status-bar';
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { AuthProvider } from '../contexts/AuthContext';
@@ -33,16 +33,35 @@ export default function RootLayout() {
         // Add custom fonts here if needed
     });
 
+    // NOVO: Estado para controlar quando tudo está pronto
+    const [isAppReady, setIsAppReady] = useState(false);
+
     useEffect(() => {
-        if (fontsLoaded) {
-            SplashScreen.hideAsync();
+        async function prepare() {
+            try {
+                // Aguarda as fontes carregarem
+                if (fontsLoaded) {
+                    // NOVO: Pequeno delay para garantir que todos os providers estão prontos
+                    await new Promise(resolve => setTimeout(resolve, 100));
+                    setIsAppReady(true);
+                    await SplashScreen.hideAsync();
+                }
+            } catch (e) {
+                console.warn('Erro durante preparação da app:', e);
+                // Mesmo com erro, marca como pronto para não travar a app
+                setIsAppReady(true);
+                await SplashScreen.hideAsync();
+            }
         }
+
+        prepare();
     }, [fontsLoaded]);
 
-    if (!fontsLoaded) {
+    // NOVO: Só renderiza quando tudo está pronto
+    if (!fontsLoaded || !isAppReady) {
         return (
             <View style={styles.loadingContainer}>
-                {/* You can add a loading component here */}
+                {/* Tela de loading simples */}
             </View>
         );
     }
