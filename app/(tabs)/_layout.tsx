@@ -193,6 +193,7 @@ export default function TabLayout() {
                 options={{
                     title: 'Alertas',
                     headerTitle: 'Notificações',
+                    headerShown: false,
                     tabBarIcon: ({ color, size, focused }) => (
                         <View style={styles.tabIconContainer}>
                             <View style={[
@@ -234,6 +235,7 @@ export default function TabLayout() {
                 options={{
                     title: 'Perfil',
                     headerTitle: 'Meu Perfil',
+                    headerShown: false,
                     tabBarIcon: ({ color, size, focused }) => (
                         <View style={styles.tabIconContainer}>
                             <View style={[

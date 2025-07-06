@@ -1,31 +1,33 @@
-// app/(tabs)/profile.tsx - Página de Perfil COMPLETA
-import React, { useState } from 'react';
-import { 
-  View, 
-  Text, 
-  ScrollView, 
-  TouchableOpacity, 
-  StyleSheet, 
-  Alert,
-  Switch,
-  Modal,
-  TextInput,
-  ActivityIndicator,
-} from 'react-native';
+// app/(tabs)/profile.tsx - Página de Perfil Redesenhada
 import { Ionicons } from '@expo/vector-icons';
-import { useAuth } from '../../contexts/AuthContext';
-import { useTheme } from '../../contexts/ThemeContext';
-import { useNotifications } from '../../contexts/NotificationContext';
-import { useRouter } from 'expo-router';
-import { LinearGradient } from 'expo-linear-gradient';
 import { BlurView } from 'expo-blur';
+import { LinearGradient } from 'expo-linear-gradient';
+import { useRouter } from 'expo-router';
+import React, { useState } from 'react';
+import {
+  ActivityIndicator,
+  Alert,
+  Modal,
+  ScrollView,
+  StyleSheet,
+  Switch,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
+} from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useAuth } from '../../contexts/AuthContext';
+import { useNotifications } from '../../contexts/NotificationContext';
+import { useTheme } from '../../contexts/ThemeContext';
 
 export default function Profile() {
   const { user, logout, updateUserProfile } = useAuth();
   const { theme, themePreference, setTheme, toggleTheme } = useTheme();
   const { settings, updateSettings } = useNotifications();
   const router = useRouter();
-  
+  const insets = useSafeAreaInsets();
+
   const [showEditProfile, setShowEditProfile] = useState(false);
   const [showThemeSelector, setShowThemeSelector] = useState(false);
   const [displayName, setDisplayName] = useState(user?.displayName || '');
@@ -37,8 +39,8 @@ export default function Profile() {
       'Tem certeza que deseja sair da sua conta?',
       [
         { text: 'Cancelar', style: 'cancel' },
-        { 
-          text: 'Sair', 
+        {
+          text: 'Sair',
           style: 'destructive',
           onPress: async () => {
             try {
@@ -80,13 +82,14 @@ export default function Profile() {
     </View>
   );
 
-  const SettingItem = ({ 
-    icon, 
-    title, 
-    subtitle, 
-    onPress, 
+  const SettingItem = ({
+    icon,
+    title,
+    subtitle,
+    onPress,
     rightComponent,
-    disabled = false
+    disabled = false,
+    color
   }: {
     icon: string;
     title: string;
@@ -94,22 +97,25 @@ export default function Profile() {
     onPress?: () => void;
     rightComponent?: React.ReactNode;
     disabled?: boolean;
+    color?: string;
   }) => (
-    <TouchableOpacity 
-      style={[styles.settingItem, disabled && styles.settingItemDisabled]} 
+    <TouchableOpacity
+      style={[styles.settingItem, disabled && styles.settingItemDisabled]}
       onPress={onPress}
       disabled={disabled}
+      activeOpacity={0.7}
     >
       <View style={styles.settingLeft}>
-        <Ionicons 
-          name={icon as any} 
-          size={24} 
-          color={disabled ? theme.colors.textSecondary : theme.colors.primary} 
-          style={styles.settingIcon} 
-        />
-        <View>
-          <Text style={[styles.settingTitle, { 
-            color: disabled ? theme.colors.textSecondary : theme.colors.text 
+        <View style={[styles.settingIconContainer, { backgroundColor: (color || theme.colors.primary) + '15' }]}>
+          <Ionicons
+            name={icon as any}
+            size={20}
+            color={disabled ? theme.colors.textSecondary : (color || theme.colors.primary)}
+          />
+        </View>
+        <View style={styles.settingTextContainer}>
+          <Text style={[styles.settingTitle, {
+            color: disabled ? theme.colors.textSecondary : theme.colors.text
           }]}>
             {title}
           </Text>
@@ -144,13 +150,13 @@ export default function Profile() {
                 <Ionicons name="close" size={24} color={theme.colors.text} />
               </TouchableOpacity>
             </View>
-            
+
             <View style={styles.modalBody}>
               <Text style={[styles.inputLabel, { color: theme.colors.text }]}>
                 Nome de exibição
               </Text>
               <TextInput
-                style={[styles.textInput, { 
+                style={[styles.textInput, {
                   backgroundColor: theme.colors.background,
                   color: theme.colors.text,
                   borderColor: theme.colors.border
@@ -161,17 +167,17 @@ export default function Profile() {
                 placeholderTextColor={theme.colors.textSecondary}
               />
             </View>
-            
+
             <View style={styles.modalActions}>
-              <TouchableOpacity 
-                style={[styles.modalButton, styles.cancelButton]}
+              <TouchableOpacity
+                style={[styles.modalButton, styles.cancelButton, { backgroundColor: theme.colors.background }]}
                 onPress={() => setShowEditProfile(false)}
               >
-                <Text style={styles.cancelButtonText}>Cancelar</Text>
+                <Text style={[styles.cancelButtonText, { color: theme.colors.textSecondary }]}>Cancelar</Text>
               </TouchableOpacity>
-              
-              <TouchableOpacity 
-                style={[styles.modalButton, styles.saveButton]}
+
+              <TouchableOpacity
+                style={[styles.modalButton, styles.saveButton, { backgroundColor: theme.colors.primary }]}
                 onPress={handleUpdateProfile}
                 disabled={updating}
               >
@@ -206,37 +212,43 @@ export default function Profile() {
                 <Ionicons name="close" size={24} color={theme.colors.text} />
               </TouchableOpacity>
             </View>
-            
+
             <View style={styles.modalBody}>
               {[
-                { key: 'light', label: 'Claro', icon: 'sunny-outline' },
-                { key: 'dark', label: 'Escuro', icon: 'moon-outline' },
-                { key: 'system', label: 'Automático', icon: 'phone-portrait-outline' },
+                { key: 'light', label: 'Claro', icon: 'sunny-outline', color: '#FF9500' },
+                { key: 'dark', label: 'Escuro', icon: 'moon-outline', color: '#5856D6' },
+                { key: 'system', label: 'Automático', icon: 'phone-portrait-outline', color: '#34C759' },
               ].map((option) => (
                 <TouchableOpacity
                   key={option.key}
-                  style={styles.themeOption}
+                  style={[
+                    styles.themeOption,
+                    themePreference === option.key && [
+                      styles.themeOptionActive,
+                      { backgroundColor: option.color + '15' }
+                    ]
+                  ]}
                   onPress={() => {
                     setTheme(option.key as any);
                     setShowThemeSelector(false);
                   }}
                 >
-                  <Ionicons 
-                    name={option.icon as any} 
-                    size={24} 
-                    color={themePreference === option.key ? theme.colors.primary : theme.colors.textSecondary} 
-                  />
+                  <View style={[styles.themeIconContainer, { backgroundColor: option.color + '15' }]}>
+                    <Ionicons
+                      name={option.icon as any}
+                      size={20}
+                      color={option.color}
+                    />
+                  </View>
                   <Text style={[
                     styles.themeOptionText,
-                    { 
-                      color: themePreference === option.key ? theme.colors.primary : theme.colors.text,
-                      fontWeight: themePreference === option.key ? '600' : '400'
-                    }
+                    { color: theme.colors.text },
+                    themePreference === option.key && { fontWeight: '600' }
                   ]}>
                     {option.label}
                   </Text>
                   {themePreference === option.key && (
-                    <Ionicons name="checkmark" size={20} color={theme.colors.primary} />
+                    <Ionicons name="checkmark-circle" size={20} color={option.color} />
                   )}
                 </TouchableOpacity>
               ))}
@@ -254,40 +266,53 @@ export default function Profile() {
         colors={theme.dark ? ['#1a1a2e', '#16213e'] : ['#667eea', '#764ba2']}
         style={styles.header}
       >
-        <View style={styles.userHeader}>
-          <View style={styles.avatar}>
-            <Text style={styles.avatarText}>
-              {user?.displayName?.charAt(0)?.toUpperCase() || 
-               user?.email?.charAt(0)?.toUpperCase() || 'U'}
-            </Text>
-          </View>
+        <View style={[styles.userHeader, { paddingTop: insets.top + 10 }]}>
           <View style={styles.userInfo}>
+            <View style={styles.avatarContainer}>
+              <LinearGradient
+                colors={[theme.colors.primary, theme.colors.secondary]}
+                style={styles.avatar}
+              >
+                <Text style={styles.avatarText}>
+                  {user?.displayName?.charAt(0)?.toUpperCase() ||
+                    user?.email?.charAt(0)?.toUpperCase() || 'U'}
+                </Text>
+              </LinearGradient>
+              <TouchableOpacity
+                style={styles.editButton}
+                onPress={() => {
+                  setDisplayName(user?.displayName || user?.email?.split('@')[0] || '');
+                  setShowEditProfile(true);
+                }}
+              >
+                <Ionicons name="create-outline" size={16} color="white" />
+              </TouchableOpacity>
+            </View>
             <Text style={styles.userName}>
               {user?.displayName || user?.email?.split('@')[0] || 'Usuário'}
             </Text>
             <Text style={styles.userEmail}>{user?.email}</Text>
           </View>
-          <TouchableOpacity 
-            style={styles.editButton}
-            onPress={() => {
-              setDisplayName(user?.displayName || user?.email?.split('@')[0] || '');
-              setShowEditProfile(true);
-            }}
-          >
-            <Ionicons name="create-outline" size={20} color="white" />
-          </TouchableOpacity>
         </View>
       </LinearGradient>
 
-      <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
+      <ScrollView
+        style={styles.scrollView}
+        contentContainerStyle={[
+          styles.scrollContent,
+          { paddingBottom: insets.bottom + 120 }
+        ]}
+        showsVerticalScrollIndicator={false}
+      >
         {/* Configurações Gerais */}
         <ProfileSection title="Aparência">
           <SettingItem
             icon="palette-outline"
             title="Tema"
-            subtitle={themePreference === 'system' ? 'Automático' : 
-                     themePreference === 'dark' ? 'Escuro' : 'Claro'}
+            subtitle={themePreference === 'system' ? 'Automático' :
+              themePreference === 'dark' ? 'Escuro' : 'Claro'}
             onPress={() => setShowThemeSelector(true)}
+            color="#FF9500"
           />
         </ProfileSection>
 
@@ -305,8 +330,9 @@ export default function Profile() {
                 thumbColor="white"
               />
             }
+            color="#FF3B30"
           />
-          
+
           <SettingItem
             icon="server-outline"
             title="Servidor Offline"
@@ -321,8 +347,9 @@ export default function Profile() {
                 disabled={!settings.enabled}
               />
             }
+            color="#FF9500"
           />
-          
+
           <SettingItem
             icon="speedometer-outline"
             title="Alto Uso de CPU"
@@ -337,6 +364,7 @@ export default function Profile() {
                 disabled={!settings.enabled}
               />
             }
+            color="#FFCC00"
           />
         </ProfileSection>
 
@@ -347,20 +375,23 @@ export default function Profile() {
             title="Central de Ajuda"
             subtitle="FAQ e documentação"
             onPress={() => Alert.alert('Em breve', 'Central de ajuda em desenvolvimento')}
+            color="#007AFF"
           />
-          
+
           <SettingItem
             icon="bug-outline"
             title="Reportar Bug"
             subtitle="Enviar feedback sobre problemas"
             onPress={() => Alert.alert('Em breve', 'Sistema de feedback em desenvolvimento')}
+            color="#FF9500"
           />
-          
+
           <SettingItem
             icon="star-outline"
             title="Avaliar App"
             subtitle="Deixe sua avaliação na loja"
             onPress={() => Alert.alert('Obrigado!', 'Redirecionamento para loja em breve')}
+            color="#FFCC00"
           />
         </ProfileSection>
 
@@ -370,18 +401,21 @@ export default function Profile() {
             icon="information-circle-outline"
             title="Versão do App"
             subtitle="1.0.0"
+            color="#34C759"
           />
-          
+
           <SettingItem
             icon="document-text-outline"
             title="Termos de Uso"
             onPress={() => Alert.alert('Termos de Uso', 'Documento em desenvolvimento')}
+            color="#5856D6"
           />
-          
+
           <SettingItem
             icon="shield-checkmark-outline"
             title="Política de Privacidade"
             onPress={() => Alert.alert('Privacidade', 'Documento em desenvolvimento')}
+            color="#32ADE6"
           />
         </ProfileSection>
 
@@ -392,14 +426,16 @@ export default function Profile() {
             title="Alterar Senha"
             subtitle="Redefinir sua senha"
             onPress={() => Alert.alert('Em breve', 'Funcionalidade em desenvolvimento')}
+            color="#FF9500"
           />
-          
+
           <SettingItem
             icon="log-out-outline"
             title="Sair da Conta"
             subtitle="Fazer logout do aplicativo"
             onPress={handleLogout}
             rightComponent={null}
+            color="#FF3B30"
           />
         </ProfileSection>
 
@@ -425,68 +461,85 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   header: {
-    paddingTop: 60,
-    paddingBottom: 24,
     paddingHorizontal: 20,
+    paddingBottom: 24,
   },
   userHeader: {
-    flexDirection: 'row',
     alignItems: 'center',
   },
+  userInfo: {
+    alignItems: 'center',
+  },
+  avatarContainer: {
+    position: 'relative',
+    marginBottom: 16,
+  },
   avatar: {
-    width: 64,
-    height: 64,
-    borderRadius: 32,
+    width: 80,
+    height: 80,
+    borderRadius: 20,
+    justifyContent: 'center',
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.3,
+    shadowRadius: 16,
+    elevation: 8,
+  },
+  avatarText: {
+    fontSize: 32,
+    fontWeight: '700',
+    color: 'white',
+  },
+  editButton: {
+    position: 'absolute',
+    bottom: -4,
+    right: -4,
+    width: 32,
+    height: 32,
+    borderRadius: 16,
     backgroundColor: 'rgba(255, 255, 255, 0.2)',
     justifyContent: 'center',
     alignItems: 'center',
-    marginRight: 16,
-  },
-  avatarText: {
-    fontSize: 28,
-    fontWeight: 'bold',
-    color: 'white',
-  },
-  userInfo: {
-    flex: 1,
+    borderWidth: 3,
+    borderColor: 'rgba(255, 255, 255, 0.3)',
   },
   userName: {
-    fontSize: 22,
+    fontSize: 24,
     fontWeight: '700',
     color: 'white',
     marginBottom: 4,
+    letterSpacing: -0.3,
   },
   userEmail: {
     fontSize: 14,
     color: 'rgba(255, 255, 255, 0.8)',
-  },
-  editButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: 'rgba(255, 255, 255, 0.2)',
-    justifyContent: 'center',
-    alignItems: 'center',
+    fontWeight: '500',
   },
   scrollView: {
     flex: 1,
   },
+  scrollContent: {
+    paddingTop: 24,
+  },
   section: {
-    marginBottom: 24,
+    marginBottom: 32,
     marginHorizontal: 20,
   },
   sectionTitle: {
     fontSize: 18,
     fontWeight: '700',
     marginBottom: 12,
+    letterSpacing: -0.2,
   },
   sectionContent: {
-    borderRadius: 12,
+    borderRadius: 16,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.08,
+    shadowRadius: 12,
+    elevation: 4,
+    overflow: 'hidden',
   },
   settingItem: {
     flexDirection: 'row',
@@ -504,24 +557,36 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     flex: 1,
   },
-  settingIcon: {
+  settingIconContainer: {
+    width: 36,
+    height: 36,
+    borderRadius: 10,
+    justifyContent: 'center',
+    alignItems: 'center',
     marginRight: 12,
+  },
+  settingTextContainer: {
+    flex: 1,
   },
   settingTitle: {
     fontSize: 16,
-    fontWeight: '500',
+    fontWeight: '600',
+    letterSpacing: -0.1,
   },
   settingSubtitle: {
-    fontSize: 14,
+    fontSize: 13,
     marginTop: 2,
+    fontWeight: '500',
   },
   footer: {
     alignItems: 'center',
-    padding: 40,
+    paddingVertical: 40,
+    paddingHorizontal: 20,
   },
   footerText: {
     fontSize: 12,
     marginBottom: 4,
+    fontWeight: '500',
   },
   modalOverlay: {
     flex: 1,
@@ -531,7 +596,7 @@ const styles = StyleSheet.create({
   },
   modal: {
     margin: 20,
-    borderRadius: 16,
+    borderRadius: 20,
     overflow: 'hidden',
     width: '90%',
     maxWidth: 400,
@@ -545,7 +610,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     padding: 20,
     borderBottomWidth: 1,
-    borderBottomColor: 'rgba(0,0,0,0.1)',
+    borderBottomColor: 'rgba(0,0,0,0.05)',
   },
   modalTitle: {
     fontSize: 18,
@@ -556,14 +621,19 @@ const styles = StyleSheet.create({
   },
   inputLabel: {
     fontSize: 16,
-    fontWeight: '500',
+    fontWeight: '600',
     marginBottom: 8,
   },
   textInput: {
     borderWidth: 1,
-    borderRadius: 8,
-    padding: 12,
+    borderRadius: 12,
+    padding: 16,
     fontSize: 16,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 4,
+    elevation: 2,
   },
   modalActions: {
     flexDirection: 'row',
@@ -572,34 +642,55 @@ const styles = StyleSheet.create({
   },
   modalButton: {
     flex: 1,
-    padding: 12,
-    borderRadius: 8,
+    paddingVertical: 14,
+    paddingHorizontal: 20,
+    borderRadius: 12,
     alignItems: 'center',
+    justifyContent: 'center',
   },
   cancelButton: {
-    backgroundColor: '#f5f5f5',
+    borderWidth: 1,
+    borderColor: 'rgba(0,0,0,0.1)',
   },
   cancelButtonText: {
-    color: '#666',
-    fontWeight: '500',
+    fontWeight: '600',
+    fontSize: 16,
   },
   saveButton: {
-    backgroundColor: '#4FACFE',
+    shadowColor: '#4FACFE',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 4,
   },
   saveButtonText: {
     color: 'white',
     fontWeight: '600',
+    fontSize: 16,
   },
   themeOption: {
     flexDirection: 'row',
     alignItems: 'center',
-    padding: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: 'rgba(0,0,0,0.05)',
+    paddingVertical: 16,
+    paddingHorizontal: 16,
+    borderRadius: 12,
+    marginBottom: 8,
+  },
+  themeOptionActive: {
+    borderWidth: 2,
+    borderColor: 'transparent',
+  },
+  themeIconContainer: {
+    width: 36,
+    height: 36,
+    borderRadius: 10,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 12,
   },
   themeOptionText: {
     fontSize: 16,
-    marginLeft: 12,
+    fontWeight: '500',
     flex: 1,
   },
 });

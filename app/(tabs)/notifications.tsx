@@ -1,4 +1,4 @@
-// app/(tabs)/notifications.tsx - Página de Notificações COMPLETA
+// app/(tabs)/notifications.tsx - Página de Notificações Redesenhada
 import { Ionicons } from '@expo/vector-icons';
 import { BlurView } from 'expo-blur';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -15,7 +15,9 @@ import {
     TouchableOpacity,
     View,
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useNotifications } from '../../contexts/NotificationContext';
+import { useTheme } from '../../contexts/ThemeContext';
 
 const { width } = Dimensions.get('window');
 
@@ -30,6 +32,8 @@ export default function Notifications() {
         updateSettings
     } = useNotifications();
 
+    const { theme } = useTheme();
+    const insets = useSafeAreaInsets();
     const [refreshing, setRefreshing] = useState(false);
     const [showSettings, setShowSettings] = useState(false);
     const [filter, setFilter] = useState<'all' | 'unread'>('all');
@@ -65,13 +69,26 @@ export default function Notifications() {
 
     const getNotificationColor = (type: string) => {
         switch (type) {
-            case 'server_offline': return '#F44336';
-            case 'high_cpu': return '#FF9800';
-            case 'high_memory': return '#FF9800';
-            case 'disk_space': return '#F44336';
-            case 'ssh_failed': return '#F44336';
-            default: return '#4FACFE';
+            case 'server_offline': return theme.colors.error;
+            case 'high_cpu': return theme.colors.warning;
+            case 'high_memory': return theme.colors.warning;
+            case 'disk_space': return theme.colors.error;
+            case 'ssh_failed': return theme.colors.error;
+            default: return theme.colors.primary;
         }
+    };
+
+    const formatTimeAgo = (timestamp: Date) => {
+        const now = new Date();
+        const diff = now.getTime() - timestamp.getTime();
+        const minutes = Math.floor(diff / 60000);
+        const hours = Math.floor(diff / 3600000);
+        const days = Math.floor(diff / 86400000);
+
+        if (days > 0) return `${days}d atrás`;
+        if (hours > 0) return `${hours}h atrás`;
+        if (minutes > 0) return `${minutes}m atrás`;
+        return 'Agora';
     };
 
     const filteredNotifications = notifications.filter(n =>
@@ -82,6 +99,7 @@ export default function Notifications() {
         <TouchableOpacity
             style={[
                 styles.notificationCard,
+                { backgroundColor: theme.colors.surface },
                 !notification.read && styles.unreadCard
             ]}
             onPress={() => markAsRead(notification.id)}
@@ -90,7 +108,7 @@ export default function Notifications() {
             <View style={styles.notificationContent}>
                 <View style={[
                     styles.notificationIcon,
-                    { backgroundColor: getNotificationColor(notification.type) + '20' }
+                    { backgroundColor: getNotificationColor(notification.type) + '15' }
                 ]}>
                     <Ionicons
                         name={getNotificationIcon(notification.type) as any}
@@ -100,23 +118,25 @@ export default function Notifications() {
                 </View>
 
                 <View style={styles.notificationText}>
-                    <Text style={[
-                        styles.notificationTitle,
-                        !notification.read && styles.unreadTitle
-                    ]}>
-                        {notification.title}
-                    </Text>
-                    <Text style={styles.notificationBody}>
+                    <View style={styles.notificationHeader}>
+                        <Text style={[
+                            styles.notificationTitle,
+                            { color: theme.colors.text },
+                            !notification.read && styles.unreadTitle
+                        ]}>
+                            {notification.title}
+                        </Text>
+                        {!notification.read && (
+                            <View style={[styles.unreadDot, { backgroundColor: theme.colors.primary }]} />
+                        )}
+                    </View>
+                    <Text style={[styles.notificationBody, { color: theme.colors.textSecondary }]}>
                         {notification.body}
                     </Text>
-                    <Text style={styles.notificationTime}>
-                        {notification.timestamp.toLocaleString('pt-BR')}
+                    <Text style={[styles.notificationTime, { color: theme.colors.textSecondary }]}>
+                        {formatTimeAgo(notification.timestamp)}
                     </Text>
                 </View>
-
-                {!notification.read && (
-                    <View style={styles.unreadDot} />
-                )}
             </View>
         </TouchableOpacity>
     );
@@ -130,40 +150,40 @@ export default function Notifications() {
         >
             <View style={styles.modalOverlay}>
                 <BlurView intensity={20} style={styles.settingsModal}>
-                    <View style={styles.settingsContent}>
+                    <View style={[styles.settingsContent, { backgroundColor: theme.colors.surface }]}>
                         <View style={styles.modalHeader}>
-                            <Text style={styles.modalTitle}>
+                            <Text style={[styles.modalTitle, { color: theme.colors.text }]}>
                                 Configurações de Notificação
                             </Text>
                             <TouchableOpacity onPress={() => setShowSettings(false)}>
-                                <Ionicons name="close" size={24} color="#1D1D1F" />
+                                <Ionicons name="close" size={24} color={theme.colors.text} />
                             </TouchableOpacity>
                         </View>
 
-                        <ScrollView style={styles.settingsList}>
+                        <ScrollView style={styles.settingsList} showsVerticalScrollIndicator={false}>
                             {/* Main Toggle */}
                             <View style={styles.settingGroup}>
-                                <Text style={styles.settingGroupTitle}>
+                                <Text style={[styles.settingGroupTitle, { color: theme.colors.text }]}>
                                     Geral
                                 </Text>
 
                                 <View style={styles.settingItem}>
-                                    <Ionicons name="notifications-outline" size={20} color="#8E8E93" />
-                                    <Text style={styles.settingLabel}>
+                                    <Ionicons name="notifications-outline" size={20} color={theme.colors.primary} />
+                                    <Text style={[styles.settingLabel, { color: theme.colors.text }]}>
                                         Todas as notificações
                                     </Text>
                                     <Switch
                                         value={settings.enabled}
                                         onValueChange={(value) => updateSettings({ enabled: value })}
-                                        trackColor={{ false: '#E5E5EA', true: '#4FACFE' }}
-                                        thumbColor={settings.enabled ? '#FFFFFF' : '#FFFFFF'}
+                                        trackColor={{ false: theme.colors.border, true: theme.colors.primary }}
+                                        thumbColor="white"
                                     />
                                 </View>
                             </View>
 
                             {/* Alert Types */}
                             <View style={styles.settingGroup}>
-                                <Text style={styles.settingGroupTitle}>
+                                <Text style={[styles.settingGroupTitle, { color: theme.colors.text }]}>
                                     Tipos de Alerta
                                 </Text>
 
@@ -175,8 +195,12 @@ export default function Notifications() {
                                     { key: 'sshConnectionFailed', label: 'Falha na conexão SSH', icon: 'key-outline' },
                                 ].map((setting) => (
                                     <View key={setting.key} style={styles.settingItem}>
-                                        <Ionicons name={setting.icon as any} size={20} color="#8E8E93" />
-                                        <Text style={styles.settingLabel}>
+                                        <Ionicons
+                                            name={setting.icon as any}
+                                            size={20}
+                                            color={theme.colors.textSecondary}
+                                        />
+                                        <Text style={[styles.settingLabel, { color: theme.colors.text }]}>
                                             {setting.label}
                                         </Text>
                                         <Switch
@@ -184,8 +208,8 @@ export default function Notifications() {
                                             onValueChange={(value) => updateSettings({
                                                 [setting.key]: value
                                             })}
-                                            trackColor={{ false: '#E5E5EA', true: '#4FACFE' }}
-                                            thumbColor="#FFFFFF"
+                                            trackColor={{ false: theme.colors.border, true: theme.colors.primary }}
+                                            thumbColor="white"
                                             disabled={!settings.enabled}
                                         />
                                     </View>
@@ -194,23 +218,40 @@ export default function Notifications() {
 
                             {/* Thresholds */}
                             <View style={styles.settingGroup}>
-                                <Text style={styles.settingGroupTitle}>
+                                <Text style={[styles.settingGroupTitle, { color: theme.colors.text }]}>
                                     Limites de Alerta
                                 </Text>
 
-                                <View style={styles.thresholdItem}>
-                                    <Text style={styles.thresholdLabel}>CPU</Text>
-                                    <Text style={styles.thresholdValue}>{settings.threshold.cpu}%</Text>
-                                </View>
+                                <View style={[styles.thresholdCard, { backgroundColor: theme.colors.background }]}>
+                                    <View style={styles.thresholdItem}>
+                                        <View style={styles.thresholdInfo}>
+                                            <Ionicons name="speedometer-outline" size={16} color={theme.colors.warning} />
+                                            <Text style={[styles.thresholdLabel, { color: theme.colors.text }]}>CPU</Text>
+                                        </View>
+                                        <Text style={[styles.thresholdValue, { color: theme.colors.warning }]}>
+                                            {settings.threshold.cpu}%
+                                        </Text>
+                                    </View>
 
-                                <View style={styles.thresholdItem}>
-                                    <Text style={styles.thresholdLabel}>Memória</Text>
-                                    <Text style={styles.thresholdValue}>{settings.threshold.memory}%</Text>
-                                </View>
+                                    <View style={styles.thresholdItem}>
+                                        <View style={styles.thresholdInfo}>
+                                            <Ionicons name="hardware-chip-outline" size={16} color={theme.colors.info} />
+                                            <Text style={[styles.thresholdLabel, { color: theme.colors.text }]}>Memória</Text>
+                                        </View>
+                                        <Text style={[styles.thresholdValue, { color: theme.colors.info }]}>
+                                            {settings.threshold.memory}%
+                                        </Text>
+                                    </View>
 
-                                <View style={styles.thresholdItem}>
-                                    <Text style={styles.thresholdLabel}>Disco</Text>
-                                    <Text style={styles.thresholdValue}>{settings.threshold.disk}%</Text>
+                                    <View style={styles.thresholdItem}>
+                                        <View style={styles.thresholdInfo}>
+                                            <Ionicons name="archive-outline" size={16} color={theme.colors.error} />
+                                            <Text style={[styles.thresholdLabel, { color: theme.colors.text }]}>Disco</Text>
+                                        </View>
+                                        <Text style={[styles.thresholdValue, { color: theme.colors.error }]}>
+                                            {settings.threshold.disk}%
+                                        </Text>
+                                    </View>
                                 </View>
                             </View>
                         </ScrollView>
@@ -221,13 +262,13 @@ export default function Notifications() {
     );
 
     return (
-        <View style={styles.container}>
+        <View style={[styles.container, { backgroundColor: theme.colors.background }]}>
             {/* Header */}
             <LinearGradient
-                colors={['#4FACFE', '#00F2FE']}
+                colors={theme.dark ? ['#1a1a2e', '#16213e'] : ['#4FACFE', '#00F2FE']}
                 style={styles.header}
             >
-                <View style={styles.headerContent}>
+                <View style={[styles.headerContent, { paddingTop: insets.top + 10 }]}>
                     <View style={styles.headerTitleContainer}>
                         <Text style={styles.headerTitle}>Notificações</Text>
                         <Text style={styles.headerSubtitle}>
@@ -254,7 +295,7 @@ export default function Notifications() {
             </LinearGradient>
 
             {/* Filter Tabs */}
-            <View style={styles.filterTabs}>
+            <View style={[styles.filterTabs, { backgroundColor: theme.colors.surface }]}>
                 {[
                     { key: 'all', label: 'Todas', count: notifications.length },
                     { key: 'unread', label: 'Não lidas', count: unreadCount },
@@ -263,13 +304,15 @@ export default function Notifications() {
                         key={tab.key}
                         style={[
                             styles.filterTab,
-                            filter === tab.key && styles.filterTabActive
+                            { backgroundColor: theme.colors.background },
+                            filter === tab.key && [styles.filterTabActive, { backgroundColor: theme.colors.primary + '15' }]
                         ]}
                         onPress={() => setFilter(tab.key as any)}
                     >
                         <Text style={[
                             styles.filterTabText,
-                            filter === tab.key && styles.filterTabTextActive
+                            { color: theme.colors.textSecondary },
+                            filter === tab.key && [styles.filterTabTextActive, { color: theme.colors.primary }]
                         ]}>
                             {tab.label} ({tab.count})
                         </Text>
@@ -281,7 +324,7 @@ export default function Notifications() {
                         style={styles.markAllReadButton}
                         onPress={markAllAsRead}
                     >
-                        <Text style={styles.markAllReadText}>
+                        <Text style={[styles.markAllReadText, { color: theme.colors.primary }]}>
                             Marcar todas como lidas
                         </Text>
                     </TouchableOpacity>
@@ -291,12 +334,16 @@ export default function Notifications() {
             {/* Notifications List */}
             <ScrollView
                 style={styles.scrollView}
-                contentContainerStyle={styles.scrollContent}
+                contentContainerStyle={[
+                    styles.scrollContent,
+                    { paddingBottom: insets.bottom + 120 }
+                ]}
                 refreshControl={
                     <RefreshControl
                         refreshing={refreshing}
                         onRefresh={onRefresh}
-                        tintColor="#4FACFE"
+                        tintColor={theme.colors.primary}
+                        colors={[theme.colors.primary]}
                     />
                 }
                 showsVerticalScrollIndicator={false}
@@ -307,17 +354,17 @@ export default function Notifications() {
                     ))
                 ) : (
                     <View style={styles.emptyState}>
-                        <View style={styles.emptyIcon}>
+                        <View style={[styles.emptyIcon, { backgroundColor: theme.colors.primary + '15' }]}>
                             <Ionicons
                                 name={filter === 'unread' ? 'checkmark-circle-outline' : 'notifications-outline'}
                                 size={48}
-                                color="#4FACFE"
+                                color={theme.colors.primary}
                             />
                         </View>
-                        <Text style={styles.emptyTitle}>
+                        <Text style={[styles.emptyTitle, { color: theme.colors.text }]}>
                             {filter === 'unread' ? 'Tudo em dia!' : 'Nenhuma notificação'}
                         </Text>
-                        <Text style={styles.emptySubtitle}>
+                        <Text style={[styles.emptySubtitle, { color: theme.colors.textSecondary }]}>
                             {filter === 'unread'
                                 ? 'Você não tem notificações não lidas'
                                 : 'Suas notificações aparecerão aqui'
@@ -335,12 +382,10 @@ export default function Notifications() {
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: '#f8f9fa',
     },
     header: {
-        paddingTop: 60,
-        paddingBottom: 20,
         paddingHorizontal: 20,
+        paddingBottom: 20,
     },
     headerContent: {
         flexDirection: 'row',
@@ -354,6 +399,7 @@ const styles = StyleSheet.create({
         fontSize: 28,
         fontWeight: '700',
         color: 'white',
+        letterSpacing: -0.5,
     },
     headerSubtitle: {
         fontSize: 14,
@@ -376,58 +422,61 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         alignItems: 'center',
         paddingHorizontal: 20,
-        paddingVertical: 12,
-        backgroundColor: 'white',
+        paddingVertical: 16,
         borderBottomWidth: 1,
-        borderBottomColor: '#E5E5EA',
+        borderBottomColor: 'rgba(0,0,0,0.05)',
+        gap: 8,
     },
     filterTab: {
         paddingHorizontal: 16,
         paddingVertical: 8,
-        borderRadius: 16,
-        marginRight: 8,
+        borderRadius: 20,
     },
     filterTabActive: {
-        backgroundColor: 'rgba(79, 172, 254, 0.1)',
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.1,
+        shadowRadius: 4,
+        elevation: 2,
     },
     filterTabText: {
         fontSize: 14,
         fontWeight: '500',
-        color: '#8E8E93',
     },
     filterTabTextActive: {
-        color: '#4FACFE',
         fontWeight: '600',
     },
     markAllReadButton: {
         marginLeft: 'auto',
+        paddingHorizontal: 12,
+        paddingVertical: 8,
     },
     markAllReadText: {
         fontSize: 14,
-        fontWeight: '500',
-        color: '#4FACFE',
+        fontWeight: '600',
     },
     scrollView: {
         flex: 1,
     },
     scrollContent: {
-        padding: 20,
-        paddingBottom: 100,
+        paddingHorizontal: 20,
+        paddingTop: 16,
     },
     notificationCard: {
-        backgroundColor: 'white',
-        borderRadius: 12,
+        borderRadius: 16,
         marginBottom: 12,
         padding: 16,
         shadowColor: '#000',
         shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.1,
-        shadowRadius: 4,
+        shadowOpacity: 0.08,
+        shadowRadius: 8,
         elevation: 3,
     },
     unreadCard: {
         borderLeftWidth: 4,
         borderLeftColor: '#4FACFE',
+        shadowOpacity: 0.12,
+        elevation: 4,
     },
     notificationContent: {
         flexDirection: 'row',
@@ -436,7 +485,7 @@ const styles = StyleSheet.create({
     notificationIcon: {
         width: 40,
         height: 40,
-        borderRadius: 20,
+        borderRadius: 12,
         justifyContent: 'center',
         alignItems: 'center',
         marginRight: 12,
@@ -444,11 +493,17 @@ const styles = StyleSheet.create({
     notificationText: {
         flex: 1,
     },
+    notificationHeader: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        marginBottom: 6,
+    },
     notificationTitle: {
         fontSize: 16,
         fontWeight: '600',
-        color: '#1D1D1F',
-        marginBottom: 4,
+        flex: 1,
+        letterSpacing: -0.2,
     },
     unreadTitle: {
         fontWeight: '700',
@@ -456,44 +511,41 @@ const styles = StyleSheet.create({
     notificationBody: {
         fontSize: 14,
         lineHeight: 20,
-        color: '#8E8E93',
-        marginBottom: 4,
+        marginBottom: 8,
     },
     notificationTime: {
         fontSize: 12,
-        color: '#8E8E93',
+        fontWeight: '500',
     },
     unreadDot: {
         width: 8,
         height: 8,
         borderRadius: 4,
-        backgroundColor: '#4FACFE',
         marginLeft: 8,
-        marginTop: 4,
     },
     emptyState: {
         alignItems: 'center',
-        paddingVertical: 60,
+        paddingVertical: 80,
+        paddingHorizontal: 40,
     },
     emptyIcon: {
         width: 80,
         height: 80,
-        borderRadius: 40,
-        backgroundColor: 'rgba(79, 172, 254, 0.1)',
+        borderRadius: 20,
         justifyContent: 'center',
         alignItems: 'center',
-        marginBottom: 20,
+        marginBottom: 24,
     },
     emptyTitle: {
         fontSize: 20,
         fontWeight: '600',
-        color: '#1D1D1F',
         marginBottom: 8,
+        textAlign: 'center',
     },
     emptySubtitle: {
         fontSize: 14,
-        color: '#8E8E93',
         textAlign: 'center',
+        lineHeight: 20,
     },
     modalOverlay: {
         flex: 1,
@@ -501,14 +553,13 @@ const styles = StyleSheet.create({
         justifyContent: 'flex-end',
     },
     settingsModal: {
-        height: '70%',
-        borderTopLeftRadius: 20,
-        borderTopRightRadius: 20,
+        height: '75%',
+        borderTopLeftRadius: 24,
+        borderTopRightRadius: 24,
         overflow: 'hidden',
     },
     settingsContent: {
         flex: 1,
-        backgroundColor: 'white',
     },
     modalHeader: {
         flexDirection: 'row',
@@ -516,12 +567,11 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         padding: 20,
         borderBottomWidth: 1,
-        borderBottomColor: '#E5E5EA',
+        borderBottomColor: 'rgba(0,0,0,0.05)',
     },
     modalTitle: {
         fontSize: 18,
         fontWeight: '600',
-        color: '#1D1D1F',
     },
     settingsList: {
         flex: 1,
@@ -529,43 +579,47 @@ const styles = StyleSheet.create({
     settingGroup: {
         padding: 20,
         borderBottomWidth: 1,
-        borderBottomColor: '#F2F2F7',
+        borderBottomColor: 'rgba(0,0,0,0.05)',
     },
     settingGroupTitle: {
         fontSize: 16,
         fontWeight: '600',
-        color: '#1D1D1F',
-        marginBottom: 12,
+        marginBottom: 16,
+        letterSpacing: -0.2,
     },
     settingItem: {
         flexDirection: 'row',
         alignItems: 'center',
         paddingVertical: 12,
+        paddingHorizontal: 4,
     },
     settingLabel: {
         flex: 1,
         fontSize: 16,
-        color: '#1D1D1F',
         marginLeft: 12,
+        fontWeight: '500',
+    },
+    thresholdCard: {
+        borderRadius: 12,
+        padding: 16,
+        gap: 12,
     },
     thresholdItem: {
         flexDirection: 'row',
         justifyContent: 'space-between',
         alignItems: 'center',
-        paddingVertical: 8,
-        paddingHorizontal: 12,
-        backgroundColor: '#F2F2F7',
-        borderRadius: 8,
-        marginBottom: 8,
+    },
+    thresholdInfo: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 8,
     },
     thresholdLabel: {
         fontSize: 14,
         fontWeight: '500',
-        color: '#1D1D1F',
     },
     thresholdValue: {
         fontSize: 14,
         fontWeight: '600',
-        color: '#4FACFE',
     },
 });

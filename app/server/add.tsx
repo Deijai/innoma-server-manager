@@ -1,4 +1,4 @@
-// app/server/add.tsx - Adicionar Servidor Elegante
+// app/server/add.tsx - Adicionar Servidor Redesenhado
 import { Ionicons } from '@expo/vector-icons';
 import { yupResolver } from '@hookform/resolvers/yup';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -142,7 +142,7 @@ export default function AddServer() {
                     <View style={[
                         styles.inputContainer,
                         {
-                            backgroundColor: theme.colors.background,
+                            backgroundColor: theme.colors.surface,
                             borderColor: focusedField === name ? theme.colors.primary : theme.colors.border
                         },
                         focusedField === name && styles.inputContainerFocused,
@@ -220,144 +220,142 @@ export default function AddServer() {
                     showsVerticalScrollIndicator={false}
                     keyboardShouldPersistTaps="handled"
                 >
-                    {/* Card Principal */}
-                    <View style={[styles.formCard, { backgroundColor: theme.colors.surface }]}>
-                        <View style={styles.formHeader}>
-                            <View style={[styles.formIcon, { backgroundColor: theme.colors.primary + '15' }]}>
-                                <Ionicons name="server-outline" size={28} color={theme.colors.primary} />
-                            </View>
-                            <Text style={[styles.formTitle, { color: theme.colors.text }]}>
-                                Informações do Servidor
-                            </Text>
-                            <Text style={[styles.formSubtitle, { color: theme.colors.textSecondary }]}>
-                                Preencha os dados para conectar ao seu servidor
+                    {/* Header da Seção */}
+                    <View style={styles.formHeader}>
+                        <View style={[styles.formIcon, { backgroundColor: theme.colors.primary + '15' }]}>
+                            <Ionicons name="server-outline" size={28} color={theme.colors.primary} />
+                        </View>
+                        <Text style={[styles.formTitle, { color: theme.colors.text }]}>
+                            Informações do Servidor
+                        </Text>
+                        <Text style={[styles.formSubtitle, { color: theme.colors.textSecondary }]}>
+                            Preencha os dados para conectar ao seu servidor
+                        </Text>
+                    </View>
+
+                    {/* Campos do Formulário */}
+                    <InputField
+                        label="Nome do Servidor"
+                        name="name"
+                        placeholder="Ex: Servidor de Produção"
+                        icon="bookmark-outline"
+                    />
+
+                    <InputField
+                        label="Endereço/IP"
+                        name="host"
+                        placeholder="192.168.1.100 ou meuservidor.com"
+                        icon="globe-outline"
+                        keyboardType="url"
+                    />
+
+                    <InputField
+                        label="Porta SSH"
+                        name="port"
+                        placeholder="22"
+                        icon="link-outline"
+                        keyboardType="numeric"
+                    />
+
+                    <InputField
+                        label="Usuário"
+                        name="username"
+                        placeholder="root ou ubuntu"
+                        icon="person-outline"
+                    />
+
+                    <InputField
+                        label="Senha"
+                        name="password"
+                        placeholder="Sua senha SSH"
+                        icon="key-outline"
+                        secureTextEntry
+                    />
+
+                    <InputField
+                        label="Descrição (opcional)"
+                        name="description"
+                        placeholder="Descrição do servidor..."
+                        icon="document-text-outline"
+                        multiline
+                    />
+
+                    {/* Status da Conexão */}
+                    {connectionStatus !== 'idle' && (
+                        <View style={[
+                            styles.statusContainer,
+                            connectionStatus === 'success'
+                                ? { backgroundColor: theme.colors.success + '15', borderColor: theme.colors.success + '30' }
+                                : { backgroundColor: theme.colors.error + '15', borderColor: theme.colors.error + '30' }
+                        ]}>
+                            <Ionicons
+                                name={connectionStatus === 'success' ? 'checkmark-circle' : 'close-circle'}
+                                size={16}
+                                color={connectionStatus === 'success' ? theme.colors.success : theme.colors.error}
+                            />
+                            <Text style={[
+                                styles.statusText,
+                                { color: connectionStatus === 'success' ? theme.colors.success : theme.colors.error }
+                            ]}>
+                                {connectionStatus === 'success'
+                                    ? 'Conexão testada com sucesso'
+                                    : 'Falha no teste de conexão'
+                                }
                             </Text>
                         </View>
+                    )}
 
-                        {/* Campos do Formulário */}
-                        <InputField
-                            label="Nome do Servidor"
-                            name="name"
-                            placeholder="Ex: Servidor de Produção"
-                            icon="bookmark-outline"
-                        />
+                    {/* Dica de Segurança */}
+                    <View style={[styles.helpContainer, { backgroundColor: theme.colors.info + '15' }]}>
+                        <Ionicons name="information-circle-outline" size={16} color={theme.colors.info} />
+                        <Text style={[styles.helpText, { color: theme.colors.info }]}>
+                            Recomendamos testar a conexão antes de salvar. Suas credenciais serão criptografadas e armazenadas com segurança.
+                        </Text>
+                    </View>
 
-                        <InputField
-                            label="Endereço/IP"
-                            name="host"
-                            placeholder="192.168.1.100 ou meuservidor.com"
-                            icon="globe-outline"
-                            keyboardType="url"
-                        />
-
-                        <InputField
-                            label="Porta SSH"
-                            name="port"
-                            placeholder="22"
-                            icon="link-outline"
-                            keyboardType="numeric"
-                        />
-
-                        <InputField
-                            label="Usuário"
-                            name="username"
-                            placeholder="root ou ubuntu"
-                            icon="person-outline"
-                        />
-
-                        <InputField
-                            label="Senha"
-                            name="password"
-                            placeholder="Sua senha SSH"
-                            icon="key-outline"
-                            secureTextEntry
-                        />
-
-                        <InputField
-                            label="Descrição (opcional)"
-                            name="description"
-                            placeholder="Descrição do servidor..."
-                            icon="document-text-outline"
-                            multiline
-                        />
-
-                        {/* Status da Conexão */}
-                        {connectionStatus !== 'idle' && (
-                            <View style={[
-                                styles.statusContainer,
-                                connectionStatus === 'success'
-                                    ? { backgroundColor: theme.colors.success + '15', borderColor: theme.colors.success + '30' }
-                                    : { backgroundColor: theme.colors.error + '15', borderColor: theme.colors.error + '30' }
-                            ]}>
-                                <Ionicons
-                                    name={connectionStatus === 'success' ? 'checkmark-circle' : 'close-circle'}
-                                    size={16}
-                                    color={connectionStatus === 'success' ? theme.colors.success : theme.colors.error}
-                                />
-                                <Text style={[
-                                    styles.statusText,
-                                    { color: connectionStatus === 'success' ? theme.colors.success : theme.colors.error }
-                                ]}>
-                                    {connectionStatus === 'success'
-                                        ? 'Conexão testada com sucesso'
-                                        : 'Falha no teste de conexão'
-                                    }
+                    {/* Botões de Ação */}
+                    <View style={styles.buttonContainer}>
+                        <TouchableOpacity
+                            style={[
+                                styles.testButton,
+                                { borderColor: theme.colors.primary, backgroundColor: theme.colors.primary + '10' },
+                                testing && styles.testButtonDisabled
+                            ]}
+                            onPress={testConnection}
+                            disabled={testing}
+                            activeOpacity={0.8}
+                        >
+                            <View style={styles.testButtonContent}>
+                                {testing ? (
+                                    <ActivityIndicator color={theme.colors.primary} size="small" />
+                                ) : (
+                                    <Ionicons name="wifi-outline" size={18} color={theme.colors.primary} />
+                                )}
+                                <Text style={[styles.testButtonText, { color: theme.colors.primary }]}>
+                                    {testing ? 'Testando...' : 'Testar Conexão'}
                                 </Text>
                             </View>
-                        )}
+                        </TouchableOpacity>
 
-                        {/* Botões de Ação */}
-                        <View style={styles.buttonContainer}>
-                            <TouchableOpacity
-                                style={[
-                                    styles.testButton,
-                                    { borderColor: theme.colors.primary, backgroundColor: theme.colors.primary + '10' },
-                                    testing && styles.testButtonDisabled
-                                ]}
-                                onPress={testConnection}
-                                disabled={testing}
-                                activeOpacity={0.8}
-                            >
-                                <View style={styles.testButtonContent}>
-                                    {testing ? (
-                                        <ActivityIndicator color={theme.colors.primary} size="small" />
-                                    ) : (
-                                        <Ionicons name="wifi-outline" size={18} color={theme.colors.primary} />
-                                    )}
-                                    <Text style={[styles.testButtonText, { color: theme.colors.primary }]}>
-                                        {testing ? 'Testando...' : 'Testar Conexão'}
-                                    </Text>
+                        <TouchableOpacity
+                            style={[
+                                styles.saveButton,
+                                { backgroundColor: theme.colors.primary },
+                                saving && styles.saveButtonDisabled
+                            ]}
+                            onPress={handleSubmit(onSubmit)}
+                            disabled={saving}
+                            activeOpacity={0.8}
+                        >
+                            {saving ? (
+                                <ActivityIndicator color="white" size="small" />
+                            ) : (
+                                <View style={styles.saveButtonContent}>
+                                    <Ionicons name="checkmark" size={18} color="white" />
+                                    <Text style={styles.saveButtonText}>Salvar Servidor</Text>
                                 </View>
-                            </TouchableOpacity>
-
-                            <TouchableOpacity
-                                style={[
-                                    styles.saveButton,
-                                    { backgroundColor: theme.colors.primary },
-                                    saving && styles.saveButtonDisabled
-                                ]}
-                                onPress={handleSubmit(onSubmit)}
-                                disabled={saving}
-                                activeOpacity={0.8}
-                            >
-                                {saving ? (
-                                    <ActivityIndicator color="white" size="small" />
-                                ) : (
-                                    <View style={styles.saveButtonContent}>
-                                        <Ionicons name="checkmark" size={18} color="white" />
-                                        <Text style={styles.saveButtonText}>Salvar Servidor</Text>
-                                    </View>
-                                )}
-                            </TouchableOpacity>
-                        </View>
-
-                        {/* Dica de Segurança */}
-                        <View style={[styles.helpContainer, { backgroundColor: theme.colors.info + '15' }]}>
-                            <Ionicons name="information-circle-outline" size={16} color={theme.colors.info} />
-                            <Text style={[styles.helpText, { color: theme.colors.info }]}>
-                                Recomendamos testar a conexão antes de salvar. Suas credenciais serão criptografadas e armazenadas com segurança.
-                            </Text>
-                        </View>
+                            )}
+                        </TouchableOpacity>
                     </View>
                 </ScrollView>
             </KeyboardAvoidingView>
@@ -414,20 +412,11 @@ const styles = StyleSheet.create({
     },
     scrollContent: {
         paddingHorizontal: 20,
-        paddingTop: 20,
-    },
-    formCard: {
-        borderRadius: 20,
-        padding: 24,
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 8 },
-        shadowOpacity: 0.1,
-        shadowRadius: 16,
-        elevation: 8,
+        paddingTop: 32,
     },
     formHeader: {
         alignItems: 'center',
-        marginBottom: 32,
+        marginBottom: 40,
     },
     formIcon: {
         width: 60,
@@ -435,21 +424,22 @@ const styles = StyleSheet.create({
         borderRadius: 16,
         justifyContent: 'center',
         alignItems: 'center',
-        marginBottom: 16,
+        marginBottom: 20,
     },
     formTitle: {
-        fontSize: 20,
+        fontSize: 24,
         fontWeight: '700',
-        marginBottom: 6,
+        marginBottom: 8,
         letterSpacing: -0.3,
+        textAlign: 'center',
     },
     formSubtitle: {
-        fontSize: 14,
+        fontSize: 16,
         textAlign: 'center',
-        lineHeight: 20,
+        lineHeight: 22,
     },
     inputGroup: {
-        marginBottom: 20,
+        marginBottom: 24,
     },
     inputLabel: {
         fontSize: 14,
@@ -460,10 +450,15 @@ const styles = StyleSheet.create({
     inputContainer: {
         flexDirection: 'row',
         alignItems: 'flex-start',
-        borderRadius: 12,
+        borderRadius: 16,
         borderWidth: 1,
         paddingHorizontal: 16,
         paddingVertical: 16,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.05,
+        shadowRadius: 8,
+        elevation: 2,
     },
     inputContainerFocused: {
         shadowColor: '#4FACFE',
@@ -499,46 +494,80 @@ const styles = StyleSheet.create({
     statusContainer: {
         flexDirection: 'row',
         alignItems: 'center',
-        padding: 12,
-        borderRadius: 8,
-        marginBottom: 20,
+        padding: 16,
+        borderRadius: 12,
+        marginBottom: 24,
         borderWidth: 1,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.05,
+        shadowRadius: 8,
+        elevation: 2,
     },
     statusText: {
         fontSize: 14,
         fontWeight: '600',
         marginLeft: 8,
     },
+    helpContainer: {
+        flexDirection: 'row',
+        alignItems: 'flex-start',
+        padding: 16,
+        borderRadius: 12,
+        borderWidth: 1,
+        borderColor: 'rgba(33, 150, 243, 0.2)',
+        marginBottom: 24,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.05,
+        shadowRadius: 8,
+        elevation: 2,
+    },
+    helpText: {
+        fontSize: 13,
+        lineHeight: 18,
+        marginLeft: 8,
+        flex: 1,
+        fontWeight: '500',
+    },
     buttonContainer: {
-        gap: 12,
-        marginBottom: 20,
+        gap: 16,
+        marginTop: 8,
     },
     testButton: {
-        borderRadius: 12,
+        borderRadius: 16,
         borderWidth: 2,
-        paddingVertical: 16,
+        paddingVertical: 18,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.1,
+        shadowRadius: 8,
+        elevation: 4,
     },
     testButtonDisabled: {
         opacity: 0.5,
+        shadowOpacity: 0,
+        elevation: 0,
     },
     testButtonContent: {
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'center',
-        gap: 8,
+        gap: 10,
     },
     testButtonText: {
         fontSize: 16,
         fontWeight: '600',
+        letterSpacing: 0.3,
     },
     saveButton: {
-        borderRadius: 12,
-        paddingVertical: 16,
+        borderRadius: 16,
+        paddingVertical: 18,
         shadowColor: '#4FACFE',
-        shadowOffset: { width: 0, height: 4 },
+        shadowOffset: { width: 0, height: 8 },
         shadowOpacity: 0.3,
-        shadowRadius: 8,
-        elevation: 6,
+        shadowRadius: 16,
+        elevation: 8,
     },
     saveButtonDisabled: {
         opacity: 0.6,
@@ -549,27 +578,12 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'center',
-        gap: 8,
+        gap: 10,
     },
     saveButtonText: {
         fontSize: 16,
         fontWeight: '600',
         color: 'white',
         letterSpacing: 0.3,
-    },
-    helpContainer: {
-        flexDirection: 'row',
-        alignItems: 'flex-start',
-        padding: 12,
-        borderRadius: 8,
-        borderWidth: 1,
-        borderColor: 'rgba(33, 150, 243, 0.2)',
-    },
-    helpText: {
-        fontSize: 12,
-        lineHeight: 16,
-        marginLeft: 8,
-        flex: 1,
-        fontWeight: '500',
     },
 });
