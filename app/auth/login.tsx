@@ -1,6 +1,5 @@
-// app/auth/login.tsx - Design Original com Teclado Corrigido
+// app/auth/login.tsx - Design Elegante e Moderno
 import { Ionicons } from '@expo/vector-icons';
-import { BlurView } from 'expo-blur';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Link, useRouter } from 'expo-router';
 import React, { useState } from 'react';
@@ -17,6 +16,7 @@ import {
     View
 } from 'react-native';
 import { useAuth } from '../../contexts/AuthContext';
+import { useTheme } from '../../contexts/ThemeContext';
 
 const { width, height } = Dimensions.get('window');
 
@@ -28,6 +28,7 @@ export default function Login() {
     const [emailFocused, setEmailFocused] = useState(false);
     const [passwordFocused, setPasswordFocused] = useState(false);
 
+    const { theme } = useTheme();
     const { signIn } = useAuth();
     const router = useRouter();
 
@@ -53,13 +54,7 @@ export default function Login() {
             await signIn(email.trim(), password);
             router.replace('/(tabs)/dashboard');
         } catch (error: any) {
-            let errorMessage = 'Erro ao fazer login';
-
-            if (error.message) {
-                errorMessage = error.message;
-            }
-
-            Alert.alert('Erro', errorMessage);
+            Alert.alert('Erro', error.message || 'Erro ao fazer login');
         } finally {
             setLoading(false);
         }
@@ -69,166 +64,188 @@ export default function Login() {
         <>
             <StatusBar barStyle="light-content" />
             <View style={styles.container}>
-                {/* Background Gradient */}
+                {/* Background com gradiente sutil */}
                 <LinearGradient
-                    colors={['#667eea', '#764ba2']}
+                    colors={theme.dark ? ['#0F0F23', '#1A1A2E'] : ['#667eea', '#764ba2']}
                     style={styles.background}
                 />
 
-                {/* Floating orbs for decoration */}
-                <View style={styles.orb1} />
-                <View style={styles.orb2} />
-                <View style={styles.orb3} />
+                {/* Elementos decorativos minimalistas */}
+                <View style={[styles.decorativeCircle1, { backgroundColor: theme.colors.primary + '10' }]} />
+                <View style={[styles.decorativeCircle2, { backgroundColor: theme.colors.primary + '05' }]} />
 
-                {/* SCROLL VIEW SEM KEYBOARD AVOIDING VIEW */}
                 <ScrollView
                     style={styles.scrollView}
                     contentContainerStyle={styles.scrollContent}
                     showsVerticalScrollIndicator={false}
                     keyboardShouldPersistTaps="handled"
-                    contentInsetAdjustmentBehavior="automatic"
                 >
-                    {/* Logo Section */}
+                    {/* Logo e Título */}
                     <View style={styles.logoSection}>
                         <View style={styles.logoContainer}>
                             <LinearGradient
-                                colors={['#ffffff', '#f8f9fa']}
+                                colors={[theme.colors.primary, theme.colors.secondary]}
                                 style={styles.logoBackground}
                             >
-                                <Text style={styles.logoIcon}>🖥️</Text>
+                                <Ionicons name="server" size={32} color="white" />
                             </LinearGradient>
                         </View>
-                        <Text style={styles.appTitle}>Server Manager</Text>
-                        <Text style={styles.appSubtitle}>Gerencie seus servidores com facilidade</Text>
+                        <Text style={[styles.appTitle, { color: 'white' }]}>Server Manager</Text>
+                        <Text style={styles.appSubtitle}>
+                            Gerencie seus servidores com simplicidade
+                        </Text>
                     </View>
 
-                    {/* Login Form */}
-                    <BlurView intensity={20} style={styles.formContainer}>
-                        <View style={styles.formContent}>
-                            <Text style={styles.formTitle}>Bem-vindo de volta</Text>
-                            <Text style={styles.formSubtitle}>Entre na sua conta para continuar</Text>
+                    {/* Card do Formulário */}
+                    <View style={[styles.formCard, { backgroundColor: theme.colors.surface }]}>
+                        <View style={styles.formHeader}>
+                            <Text style={[styles.formTitle, { color: theme.colors.text }]}>
+                                Bem-vindo de volta
+                            </Text>
+                            <Text style={[styles.formSubtitle, { color: theme.colors.textSecondary }]}>
+                                Entre na sua conta para continuar
+                            </Text>
+                        </View>
 
-                            {/* Email Input */}
-                            <View style={styles.inputGroup}>
-                                <Text style={styles.inputLabel}>Email</Text>
-                                <View style={[
-                                    styles.inputContainer,
-                                    emailFocused && styles.inputContainerFocused
-                                ]}>
-                                    <Ionicons
-                                        name="mail-outline"
-                                        size={20}
-                                        color={emailFocused ? "#667eea" : "#8E8E93"}
-                                        style={styles.inputIcon}
-                                    />
-                                    <TextInput
-                                        style={styles.textInput}
-                                        value={email}
-                                        onChangeText={setEmail}
-                                        placeholder="seu@email.com"
-                                        placeholderTextColor="#8E8E93"
-                                        keyboardType="email-address"
-                                        autoCapitalize="none"
-                                        autoCorrect={false}
-                                        onFocus={() => setEmailFocused(true)}
-                                        onBlur={() => setEmailFocused(false)}
-                                        editable={!loading}
-                                        returnKeyType="next"
-                                    />
-                                </View>
+                        {/* Campo Email */}
+                        <View style={styles.inputGroup}>
+                            <Text style={[styles.inputLabel, { color: theme.colors.text }]}>
+                                Email
+                            </Text>
+                            <View style={[
+                                styles.inputContainer,
+                                {
+                                    backgroundColor: theme.colors.background,
+                                    borderColor: emailFocused ? theme.colors.primary : theme.colors.border
+                                }
+                            ]}>
+                                <Ionicons
+                                    name="mail-outline"
+                                    size={20}
+                                    color={emailFocused ? theme.colors.primary : theme.colors.textSecondary}
+                                    style={styles.inputIcon}
+                                />
+                                <TextInput
+                                    style={[styles.textInput, { color: theme.colors.text }]}
+                                    value={email}
+                                    onChangeText={setEmail}
+                                    placeholder="seu@email.com"
+                                    placeholderTextColor={theme.colors.textSecondary}
+                                    keyboardType="email-address"
+                                    autoCapitalize="none"
+                                    autoCorrect={false}
+                                    onFocus={() => setEmailFocused(true)}
+                                    onBlur={() => setEmailFocused(false)}
+                                    editable={true}
+                                    returnKeyType="next"
+                                />
                             </View>
+                        </View>
 
-                            {/* Password Input */}
-                            <View style={styles.inputGroup}>
-                                <Text style={styles.inputLabel}>Senha</Text>
-                                <View style={[
-                                    styles.inputContainer,
-                                    passwordFocused && styles.inputContainerFocused
-                                ]}>
-                                    <Ionicons
-                                        name="lock-closed-outline"
-                                        size={20}
-                                        color={passwordFocused ? "#667eea" : "#8E8E93"}
-                                        style={styles.inputIcon}
-                                    />
-                                    <TextInput
-                                        style={[styles.textInput, styles.passwordInput]}
-                                        value={password}
-                                        onChangeText={setPassword}
-                                        placeholder="Sua senha"
-                                        placeholderTextColor="#8E8E93"
-                                        secureTextEntry={!showPassword}
-                                        onFocus={() => setPasswordFocused(true)}
-                                        onBlur={() => setPasswordFocused(false)}
-                                        editable={!loading}
-                                        returnKeyType="done"
-                                        onSubmitEditing={handleLogin}
-                                    />
-                                    <TouchableOpacity
-                                        style={styles.eyeButton}
-                                        onPress={() => setShowPassword(!showPassword)}
-                                        disabled={loading}
-                                        activeOpacity={0.7}
-                                    >
-                                        <Ionicons
-                                            name={showPassword ? "eye-outline" : "eye-off-outline"}
-                                            size={20}
-                                            color="#8E8E93"
-                                        />
-                                    </TouchableOpacity>
-                                </View>
-                            </View>
-
-                            {/* Forgot Password */}
-                            <TouchableOpacity style={styles.forgotPasswordButton}>
-                                <Text style={styles.forgotPasswordText}>Esqueceu a senha?</Text>
-                            </TouchableOpacity>
-
-                            {/* Login Button */}
-                            <TouchableOpacity
-                                style={[styles.loginButton, loading && styles.loginButtonDisabled]}
-                                onPress={handleLogin}
-                                disabled={loading}
-                                activeOpacity={0.8}
-                            >
-                                <LinearGradient
-                                    colors={loading ? ['#ccc', '#aaa'] : ['#667eea', '#764ba2']}
-                                    style={styles.loginButtonGradient}
+                        {/* Campo Senha */}
+                        <View style={styles.inputGroup}>
+                            <Text style={[styles.inputLabel, { color: theme.colors.text }]}>
+                                Senha
+                            </Text>
+                            <View style={[
+                                styles.inputContainer,
+                                {
+                                    backgroundColor: theme.colors.background,
+                                    borderColor: passwordFocused ? theme.colors.primary : theme.colors.border
+                                }
+                            ]}>
+                                <Ionicons
+                                    name="lock-closed-outline"
+                                    size={20}
+                                    color={passwordFocused ? theme.colors.primary : theme.colors.textSecondary}
+                                    style={styles.inputIcon}
+                                />
+                                <TextInput
+                                    style={[styles.textInput, { color: theme.colors.text }]}
+                                    value={password}
+                                    onChangeText={setPassword}
+                                    placeholder="Sua senha"
+                                    placeholderTextColor={theme.colors.textSecondary}
+                                    secureTextEntry={!showPassword}
+                                    onFocus={() => setPasswordFocused(true)}
+                                    onBlur={() => setPasswordFocused(false)}
+                                    editable={true}
+                                    returnKeyType="done"
+                                    onSubmitEditing={handleLogin}
+                                />
+                                <TouchableOpacity
+                                    style={styles.eyeButton}
+                                    onPress={() => setShowPassword(!showPassword)}
+                                    disabled={loading}
                                 >
-                                    {loading ? (
-                                        <ActivityIndicator color="white" size="small" />
-                                    ) : (
-                                        <>
-                                            <Text style={styles.loginButtonText}>Entrar</Text>
-                                            <Ionicons name="arrow-forward" size={18} color="white" />
-                                        </>
-                                    )}
-                                </LinearGradient>
-                            </TouchableOpacity>
-
-                            {/* Divider */}
-                            <View style={styles.divider}>
-                                <View style={styles.dividerLine} />
-                                <Text style={styles.dividerText}>ou</Text>
-                                <View style={styles.dividerLine} />
-                            </View>
-
-                            {/* Social Login Buttons */}
-                            <View style={styles.socialButtons}>
-                                <TouchableOpacity style={styles.socialButton}>
-                                    <Ionicons name="logo-apple" size={20} color="#000" />
-                                    <Text style={styles.socialButtonText}>Apple</Text>
-                                </TouchableOpacity>
-
-                                <TouchableOpacity style={styles.socialButton}>
-                                    <Ionicons name="logo-google" size={20} color="#4285F4" />
-                                    <Text style={styles.socialButtonText}>Google</Text>
+                                    <Ionicons
+                                        name={showPassword ? "eye-outline" : "eye-off-outline"}
+                                        size={20}
+                                        color={theme.colors.textSecondary}
+                                    />
                                 </TouchableOpacity>
                             </View>
                         </View>
-                    </BlurView>
 
-                    {/* Register Link */}
+                        {/* Link Esqueceu Senha */}
+                        <TouchableOpacity style={styles.forgotPasswordButton}>
+                            <Text style={[styles.forgotPasswordText, { color: theme.colors.primary }]}>
+                                Esqueceu a senha?
+                            </Text>
+                        </TouchableOpacity>
+
+                        {/* Botão Entrar */}
+                        <TouchableOpacity
+                            style={[
+                                styles.loginButton,
+                                { backgroundColor: theme.colors.primary },
+                                loading && styles.loginButtonDisabled
+                            ]}
+                            onPress={handleLogin}
+                            disabled={loading}
+                        >
+                            {loading ? (
+                                <ActivityIndicator color="white" size="small" />
+                            ) : (
+                                <View style={styles.loginButtonContent}>
+                                    <Text style={styles.loginButtonText}>Entrar</Text>
+                                    <Ionicons name="arrow-forward" size={18} color="white" />
+                                </View>
+                            )}
+                        </TouchableOpacity>
+
+                        {/* Divider */}
+                        <View style={styles.divider}>
+                            <View style={[styles.dividerLine, { backgroundColor: theme.colors.border }]} />
+                            <Text style={[styles.dividerText, { color: theme.colors.textSecondary }]}>
+                                ou
+                            </Text>
+                            <View style={[styles.dividerLine, { backgroundColor: theme.colors.border }]} />
+                        </View>
+
+                        {/* Botões Sociais */}
+                        <View style={styles.socialButtons}>
+                            <TouchableOpacity
+                                style={[styles.socialButton, { backgroundColor: theme.colors.background }]}
+                            >
+                                <Ionicons name="logo-apple" size={20} color={theme.colors.text} />
+                                <Text style={[styles.socialButtonText, { color: theme.colors.text }]}>
+                                    Apple
+                                </Text>
+                            </TouchableOpacity>
+
+                            <TouchableOpacity
+                                style={[styles.socialButton, { backgroundColor: theme.colors.background }]}
+                            >
+                                <Ionicons name="logo-google" size={20} color="#4285F4" />
+                                <Text style={[styles.socialButtonText, { color: theme.colors.text }]}>
+                                    Google
+                                </Text>
+                            </TouchableOpacity>
+                        </View>
+                    </View>
+
+                    {/* Link Criar Conta */}
                     <View style={styles.registerSection}>
                         <Text style={styles.registerText}>Não tem uma conta?</Text>
                         <Link href="/auth/register" asChild>
@@ -237,9 +254,6 @@ export default function Login() {
                             </TouchableOpacity>
                         </Link>
                     </View>
-
-                    {/* Extra padding for keyboard */}
-                    <View style={{ height: 100 }} />
                 </ScrollView>
             </View>
         </>
@@ -257,32 +271,21 @@ const styles = StyleSheet.create({
         right: 0,
         bottom: 0,
     },
-    orb1: {
+    decorativeCircle1: {
         position: 'absolute',
-        top: -50,
+        top: -100,
         right: -50,
-        width: 150,
-        height: 150,
-        borderRadius: 75,
-        backgroundColor: 'rgba(255, 255, 255, 0.1)',
+        width: 200,
+        height: 200,
+        borderRadius: 100,
     },
-    orb2: {
+    decorativeCircle2: {
         position: 'absolute',
-        bottom: 100,
-        left: -30,
-        width: 100,
-        height: 100,
-        borderRadius: 50,
-        backgroundColor: 'rgba(255, 255, 255, 0.05)',
-    },
-    orb3: {
-        position: 'absolute',
-        top: height * 0.3,
-        right: -20,
-        width: 80,
-        height: 80,
-        borderRadius: 40,
-        backgroundColor: 'rgba(255, 255, 255, 0.08)',
+        bottom: -80,
+        left: -60,
+        width: 160,
+        height: 160,
+        borderRadius: 80,
     },
     scrollView: {
         flex: 1,
@@ -290,15 +293,22 @@ const styles = StyleSheet.create({
     scrollContent: {
         flexGrow: 1,
         paddingHorizontal: 24,
-        paddingTop: 60,
+        paddingTop: 80,
         paddingBottom: 40,
+        justifyContent: 'center',
+        minHeight: height - 100,
     },
     logoSection: {
         alignItems: 'center',
-        marginBottom: 40,
+        marginBottom: 48,
     },
     logoContainer: {
         marginBottom: 24,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 8 },
+        shadowOpacity: 0.2,
+        shadowRadius: 16,
+        elevation: 8,
     },
     logoBackground: {
         width: 80,
@@ -306,21 +316,12 @@ const styles = StyleSheet.create({
         borderRadius: 20,
         justifyContent: 'center',
         alignItems: 'center',
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 10 },
-        shadowOpacity: 0.3,
-        shadowRadius: 20,
-        elevation: 10,
-    },
-    logoIcon: {
-        fontSize: 32,
     },
     appTitle: {
         fontSize: 32,
         fontWeight: '700',
-        color: 'white',
         marginBottom: 8,
-        textAlign: 'center',
+        letterSpacing: -0.5,
     },
     appSubtitle: {
         fontSize: 16,
@@ -328,56 +329,47 @@ const styles = StyleSheet.create({
         textAlign: 'center',
         lineHeight: 22,
     },
-    formContainer: {
+    formCard: {
         borderRadius: 24,
-        overflow: 'hidden',
-        marginBottom: 24,
+        padding: 32,
+        marginBottom: 32,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 16 },
+        shadowOpacity: 0.1,
+        shadowRadius: 24,
+        elevation: 16,
     },
-    formContent: {
-        backgroundColor: 'rgba(255, 255, 255, 0.95)',
-        padding: 24,
+    formHeader: {
+        alignItems: 'center',
+        marginBottom: 32,
     },
     formTitle: {
         fontSize: 24,
         fontWeight: '700',
-        color: '#1D1D1F',
-        textAlign: 'center',
         marginBottom: 8,
+        letterSpacing: -0.3,
     },
     formSubtitle: {
-        fontSize: 15,
-        color: '#8E8E93',
+        fontSize: 16,
         textAlign: 'center',
-        marginBottom: 32,
-        lineHeight: 20,
+        lineHeight: 22,
     },
     inputGroup: {
-        marginBottom: 20,
+        marginBottom: 24,
     },
     inputLabel: {
-        fontSize: 15,
+        fontSize: 14,
         fontWeight: '600',
-        color: '#1D1D1F',
         marginBottom: 8,
+        letterSpacing: 0.2,
     },
     inputContainer: {
         flexDirection: 'row',
         alignItems: 'center',
-        backgroundColor: '#F2F2F7',
-        borderRadius: 12,
+        borderRadius: 16,
         borderWidth: 1,
-        borderColor: 'transparent',
         paddingHorizontal: 16,
-        minHeight: 50,
-    },
-    inputContainerFocused: {
-        backgroundColor: 'white',
-        borderColor: '#667eea',
-        shadowColor: '#667eea',
-        shadowOffset: { width: 0, height: 4 },
-        shadowOpacity: 0.2,
-        shadowRadius: 8,
-        elevation: 4,
+        minHeight: 56,
     },
     inputIcon: {
         marginRight: 12,
@@ -385,74 +377,67 @@ const styles = StyleSheet.create({
     textInput: {
         flex: 1,
         fontSize: 16,
-        color: '#1D1D1F',
         fontWeight: '400',
-        paddingVertical: 15,
-    },
-    passwordInput: {
-        paddingRight: 40,
+        paddingVertical: 0,
+        minHeight: 56,
+        textAlignVertical: 'center',
     },
     eyeButton: {
-        position: 'absolute',
-        right: 16,
-        width: 32,
-        height: 32,
-        justifyContent: 'center',
-        alignItems: 'center',
+        padding: 8,
+        marginLeft: 8,
     },
     forgotPasswordButton: {
         alignItems: 'flex-end',
-        marginBottom: 24,
+        marginBottom: 32,
     },
     forgotPasswordText: {
-        fontSize: 15,
-        color: '#667eea',
-        fontWeight: '500',
+        fontSize: 14,
+        fontWeight: '600',
     },
     loginButton: {
-        borderRadius: 12,
-        overflow: 'hidden',
-        marginBottom: 20,
-        shadowColor: '#667eea',
-        shadowOffset: { width: 0, height: 4 },
+        borderRadius: 16,
+        minHeight: 56,
+        justifyContent: 'center',
+        alignItems: 'center',
+        marginBottom: 24,
+        shadowColor: '#4FACFE',
+        shadowOffset: { width: 0, height: 8 },
         shadowOpacity: 0.3,
-        shadowRadius: 8,
-        elevation: 6,
+        shadowRadius: 16,
+        elevation: 8,
     },
     loginButtonDisabled: {
+        opacity: 0.6,
         shadowOpacity: 0,
         elevation: 0,
     },
-    loginButtonGradient: {
+    loginButtonContent: {
         flexDirection: 'row',
         alignItems: 'center',
-        justifyContent: 'center',
-        height: 50,
+        gap: 8,
     },
     loginButtonText: {
         fontSize: 16,
         fontWeight: '600',
         color: 'white',
-        marginRight: 8,
+        letterSpacing: 0.3,
     },
     divider: {
         flexDirection: 'row',
         alignItems: 'center',
-        marginVertical: 20,
+        marginVertical: 24,
     },
     dividerLine: {
         flex: 1,
         height: 1,
-        backgroundColor: '#E5E5EA',
     },
     dividerText: {
         fontSize: 14,
-        color: '#8E8E93',
         marginHorizontal: 16,
+        fontWeight: '500',
     },
     socialButtons: {
         flexDirection: 'row',
-        justifyContent: 'space-between',
         gap: 12,
     },
     socialButton: {
@@ -460,30 +445,28 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'center',
-        backgroundColor: 'white',
         borderRadius: 12,
-        height: 50,
+        minHeight: 48,
+        gap: 8,
         borderWidth: 1,
-        borderColor: '#E5E5EA',
+        borderColor: 'rgba(0,0,0,0.08)',
     },
     socialButtonText: {
-        fontSize: 15,
-        fontWeight: '500',
-        color: '#1D1D1F',
-        marginLeft: 8,
+        fontSize: 14,
+        fontWeight: '600',
     },
     registerSection: {
         flexDirection: 'row',
         justifyContent: 'center',
         alignItems: 'center',
+        gap: 4,
     },
     registerText: {
-        fontSize: 15,
+        fontSize: 16,
         color: 'rgba(255, 255, 255, 0.8)',
-        marginRight: 4,
     },
     registerLink: {
-        fontSize: 15,
+        fontSize: 16,
         color: 'white',
         fontWeight: '600',
     },

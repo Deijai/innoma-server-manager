@@ -15,6 +15,7 @@ export default function ServerLayout() {
                 headerTintColor: '#1D1D1F',
                 headerTitleStyle: styles.stackHeaderTitle,
                 headerShadowVisible: false,
+                headerShown: false,
                 animation: 'slide_from_right',
                 animationDuration: 300,
                 headerBackground: () => (

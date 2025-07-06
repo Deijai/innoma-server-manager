@@ -1,7 +1,5 @@
-// app/(tabs)/dashboard.tsx - Dashboard Principal
+// app/(tabs)/dashboard.tsx - Dashboard Elegante com Espaçamento Correto
 import { Ionicons } from '@expo/vector-icons';
-import { BlurView } from 'expo-blur';
-import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 import React, { useEffect, useState } from 'react';
 import {
@@ -13,15 +11,19 @@ import {
     TouchableOpacity,
     View
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useAuth } from '../../contexts/AuthContext';
 import { useServers } from '../../contexts/ServerContext';
+import { useTheme } from '../../contexts/ThemeContext';
 
 const { width } = Dimensions.get('window');
 
 export default function Dashboard() {
     const { state, getServerStatus } = useServers();
     const { user } = useAuth();
+    const { theme } = useTheme();
     const router = useRouter();
+    const insets = useSafeAreaInsets();
     const [refreshing, setRefreshing] = useState(false);
 
     useEffect(() => {
@@ -61,7 +63,8 @@ export default function Dashboard() {
             .reduce((acc, s) => acc + s.cpuUsage, 0) / onlineServers
         : 0;
 
-    const QuickStatCard = ({
+    // Componente de Card de Estatística
+    const StatCard = ({
         title,
         value,
         subtitle,
@@ -77,191 +80,196 @@ export default function Dashboard() {
         onPress?: () => void;
     }) => (
         <TouchableOpacity
-            style={styles.statCard}
+            style={[styles.statCard, { backgroundColor: theme.colors.surface }]}
             onPress={onPress}
             activeOpacity={0.7}
         >
-            <BlurView intensity={20} style={styles.statCardBlur}>
-                <View style={styles.statCardContent}>
-                    <View style={styles.statCardHeader}>
-                        <View style={[styles.statIcon, { backgroundColor: color + '20' }]}>
-                            <Ionicons name={icon as any} size={20} color={color} />
-                        </View>
-                        <Text style={styles.statTitle}>{title}</Text>
+            <View style={styles.statCardContent}>
+                <View style={styles.statHeader}>
+                    <View style={[styles.statIcon, { backgroundColor: color + '15' }]}>
+                        <Ionicons name={icon as any} size={24} color={color} />
                     </View>
-                    <Text style={[styles.statValue, { color }]}>{value}</Text>
-                    <Text style={styles.statSubtitle}>{subtitle}</Text>
+                    <Text style={[styles.statTitle, { color: theme.colors.text }]}>
+                        {title}
+                    </Text>
                 </View>
-            </BlurView>
+                <Text style={[styles.statValue, { color }]}>{value}</Text>
+                <Text style={[styles.statSubtitle, { color: theme.colors.textSecondary }]}>
+                    {subtitle}
+                </Text>
+            </View>
         </TouchableOpacity>
     );
 
+    // Componente de Card de Servidor Rápido
     const ServerQuickCard = ({ server, status }: { server: any, status: any }) => (
         <TouchableOpacity
-            style={styles.serverQuickCard}
+            style={[styles.serverCard, { backgroundColor: theme.colors.surface }]}
             onPress={() => router.push(`/server/${server.id}`)}
             activeOpacity={0.7}
         >
-            <View style={styles.serverQuickCardContent}>
-                <View style={styles.serverQuickHeader}>
+            <View style={styles.serverCardContent}>
+                <View style={styles.serverHeader}>
                     <View style={[
                         styles.serverStatusDot,
-                        { backgroundColor: status?.isOnline ? '#4CAF50' : '#F44336' }
+                        { backgroundColor: status?.isOnline ? theme.colors.success : theme.colors.error }
                     ]} />
-                    <Text style={styles.serverQuickName} numberOfLines={1}>
+                    <Text style={[styles.serverName, { color: theme.colors.text }]} numberOfLines={1}>
                         {server.name}
                     </Text>
                 </View>
 
-                <Text style={styles.serverQuickHost}>{server.host}</Text>
+                <Text style={[styles.serverHost, { color: theme.colors.textSecondary }]}>
+                    {server.host}
+                </Text>
 
-                {status && (
-                    <View style={styles.serverQuickStats}>
-                        <View style={styles.serverQuickStat}>
-                            <Text style={styles.serverQuickStatLabel}>CPU</Text>
-                            <Text style={styles.serverQuickStatValue}>
+                {status && status.isOnline ? (
+                    <View style={styles.serverStats}>
+                        <View style={styles.statRow}>
+                            <Text style={[styles.statLabel, { color: theme.colors.textSecondary }]}>
+                                CPU
+                            </Text>
+                            <Text style={[styles.statValueSmall, { color: theme.colors.text }]}>
                                 {status.cpuUsage.toFixed(0)}%
                             </Text>
                         </View>
-                        <View style={styles.serverQuickStat}>
-                            <Text style={styles.serverQuickStatLabel}>RAM</Text>
-                            <Text style={styles.serverQuickStatValue}>
+                        <View style={styles.statRow}>
+                            <Text style={[styles.statLabel, { color: theme.colors.textSecondary }]}>
+                                RAM
+                            </Text>
+                            <Text style={[styles.statValueSmall, { color: theme.colors.text }]}>
                                 {status.memoryUsage.toFixed(0)}%
                             </Text>
                         </View>
+                    </View>
+                ) : (
+                    <View style={styles.offlineStatus}>
+                        <Ionicons name="warning-outline" size={16} color={theme.colors.error} />
+                        <Text style={[styles.offlineText, { color: theme.colors.error }]}>
+                            Offline
+                        </Text>
                     </View>
                 )}
             </View>
         </TouchableOpacity>
     );
 
-    const ActionButton = ({
-        title,
-        icon,
-        color,
-        onPress
-    }: {
-        title: string;
-        icon: string;
-        color: string;
-        onPress: () => void;
-    }) => (
-        <TouchableOpacity
-            style={styles.actionButton}
-            onPress={onPress}
-            activeOpacity={0.7}
-        >
-            <LinearGradient
-                colors={[color, color + 'DD']}
-                style={styles.actionButtonGradient}
-            >
-                <Ionicons name={icon as any} size={24} color="white" />
-                <Text style={styles.actionButtonText}>{title}</Text>
-            </LinearGradient>
-        </TouchableOpacity>
-    );
-
     return (
-        <View style={styles.container}>
-            {/* Background Gradient */}
-            <LinearGradient
-                colors={['#667eea', '#764ba2']}
-                style={styles.backgroundGradient}
-            />
-
+        <View style={[styles.container, { backgroundColor: theme.colors.background }]}>
             <ScrollView
                 style={styles.scrollView}
-                contentContainerStyle={styles.scrollContent}
+                contentContainerStyle={[
+                    styles.scrollContent,
+                    { paddingBottom: insets.bottom + 120 } // Espaço para as tabs
+                ]}
                 refreshControl={
                     <RefreshControl
                         refreshing={refreshing}
                         onRefresh={onRefresh}
-                        tintColor="white"
+                        tintColor={theme.colors.primary}
+                        colors={[theme.colors.primary]}
                     />
                 }
                 showsVerticalScrollIndicator={false}
             >
-                {/* Header */}
-                <View style={styles.header}>
-                    <View style={styles.greetingContainer}>
-                        <Text style={styles.greeting}>{getGreeting()},</Text>
-                        <Text style={styles.userName}>{getUserName()}</Text>
-                    </View>
-                    <TouchableOpacity style={styles.notificationButton}>
-                        <View style={styles.notificationBackground}>
-                            <Ionicons name="notifications-outline" size={20} color="#667eea" />
-                            <View style={styles.notificationBadge} />
-                        </View>
-                    </TouchableOpacity>
+                {/* Header de Boas-vindas */}
+                <View style={styles.welcomeSection}>
+                    <Text style={[styles.greeting, { color: theme.colors.textSecondary }]}>
+                        {getGreeting()},
+                    </Text>
+                    <Text style={[styles.userName, { color: theme.colors.text }]}>
+                        {getUserName()}
+                    </Text>
+                    <Text style={[styles.subtitle, { color: theme.colors.textSecondary }]}>
+                        Aqui está um resumo dos seus servidores
+                    </Text>
                 </View>
 
-                {/* Quick Stats */}
-                <View style={styles.quickStats}>
-                    <View style={styles.statsRow}>
-                        <QuickStatCard
+                {/* Cards de Estatísticas */}
+                <View style={styles.statsSection}>
+                    <Text style={[styles.sectionTitle, { color: theme.colors.text }]}>
+                        Visão Geral
+                    </Text>
+                    <View style={styles.statsGrid}>
+                        <StatCard
                             title="Total"
                             value={totalServers}
                             subtitle="servidores"
-                            color="#4FACFE"
+                            color={theme.colors.primary}
                             icon="server-outline"
                             onPress={() => router.push('/(tabs)/servers')}
                         />
-                        <QuickStatCard
+                        <StatCard
                             title="Online"
                             value={onlineServers}
-                            subtitle="ativos agora"
-                            color="#4CAF50"
+                            subtitle="funcionando"
+                            color={theme.colors.success}
                             icon="checkmark-circle-outline"
                         />
-                    </View>
-                    <View style={styles.statsRow}>
-                        <QuickStatCard
+                        <StatCard
                             title="Offline"
                             value={offlineServers}
-                            subtitle="inativos"
-                            color="#F44336"
+                            subtitle="com problemas"
+                            color={theme.colors.error}
                             icon="close-circle-outline"
                         />
-                        <QuickStatCard
+                        <StatCard
                             title="CPU Médio"
                             value={`${avgCpuUsage.toFixed(1)}%`}
                             subtitle="uso geral"
-                            color="#FF9800"
+                            color={theme.colors.warning}
                             icon="speedometer-outline"
                         />
                     </View>
                 </View>
 
-                {/* Quick Actions */}
-                <View style={styles.quickActionsSection}>
-                    <Text style={styles.sectionTitle}>Ações Rápidas</Text>
-                    <View style={styles.quickActions}>
-                        <ActionButton
-                            title="Adicionar Servidor"
-                            icon="add-circle"
-                            color="#4CAF50"
+                {/* Ações Rápidas */}
+                <View style={styles.actionsSection}>
+                    <Text style={[styles.sectionTitle, { color: theme.colors.text }]}>
+                        Ações Rápidas
+                    </Text>
+                    <View style={styles.actionsGrid}>
+                        <TouchableOpacity
+                            style={[styles.primaryAction, { backgroundColor: theme.colors.primary }]}
                             onPress={() => router.push('/server/add')}
-                        />
-                        <ActionButton
-                            title="Ver Todos"
-                            icon="list"
-                            color="#2196F3"
+                            activeOpacity={0.8}
+                        >
+                            <View style={styles.primaryActionContent}>
+                                <Ionicons name="add-circle" size={24} color="white" />
+                                <Text style={styles.primaryActionText}>Adicionar Servidor</Text>
+                            </View>
+                        </TouchableOpacity>
+
+                        <TouchableOpacity
+                            style={[styles.secondaryAction, { backgroundColor: theme.colors.surface, borderColor: theme.colors.border }]}
                             onPress={() => router.push('/(tabs)/servers')}
-                        />
+                            activeOpacity={0.7}
+                        >
+                            <View style={styles.secondaryActionContent}>
+                                <Ionicons name="list" size={20} color={theme.colors.primary} />
+                                <Text style={[styles.secondaryActionText, { color: theme.colors.primary }]}>
+                                    Ver Todos
+                                </Text>
+                            </View>
+                        </TouchableOpacity>
                     </View>
                 </View>
 
-                {/* Recent Servers */}
+                {/* Servidores Recentes */}
                 {state.servers.length > 0 ? (
-                    <View style={styles.recentSection}>
+                    <View style={styles.serversSection}>
                         <View style={styles.sectionHeader}>
-                            <Text style={styles.sectionTitle}>Servidores Recentes</Text>
+                            <Text style={[styles.sectionTitle, { color: theme.colors.text }]}>
+                                Servidores Recentes
+                            </Text>
                             <TouchableOpacity onPress={() => router.push('/(tabs)/servers')}>
-                                <Text style={styles.seeAllButton}>Ver todos</Text>
+                                <Text style={[styles.seeAllButton, { color: theme.colors.primary }]}>
+                                    Ver todos
+                                </Text>
                             </TouchableOpacity>
                         </View>
 
-                        <View style={styles.recentServers}>
+                        <View style={styles.serversGrid}>
                             {state.servers.slice(0, 4).map(server => (
                                 <ServerQuickCard
                                     key={server.id}
@@ -272,31 +280,28 @@ export default function Dashboard() {
                         </View>
                     </View>
                 ) : (
-                    // Empty State
+                    // Estado Vazio
                     <View style={styles.emptyState}>
-                        <BlurView intensity={20} style={styles.emptyStateCard}>
+                        <View style={[styles.emptyStateCard, { backgroundColor: theme.colors.surface }]}>
                             <View style={styles.emptyStateContent}>
-                                <View style={styles.emptyStateIcon}>
-                                    <Ionicons name="server-outline" size={48} color="#667eea" />
+                                <View style={[styles.emptyStateIcon, { backgroundColor: theme.colors.primary + '15' }]}>
+                                    <Ionicons name="server-outline" size={48} color={theme.colors.primary} />
                                 </View>
-                                <Text style={styles.emptyStateTitle}>Nenhum servidor ainda</Text>
-                                <Text style={styles.emptyStateSubtitle}>
+                                <Text style={[styles.emptyStateTitle, { color: theme.colors.text }]}>
+                                    Nenhum servidor ainda
+                                </Text>
+                                <Text style={[styles.emptyStateSubtitle, { color: theme.colors.textSecondary }]}>
                                     Adicione seu primeiro servidor para começar a monitorar
                                 </Text>
                                 <TouchableOpacity
-                                    style={styles.emptyStateButton}
+                                    style={[styles.emptyStateButton, { backgroundColor: theme.colors.primary }]}
                                     onPress={() => router.push('/server/add')}
                                 >
-                                    <LinearGradient
-                                        colors={['#4CAF50', '#45A049']}
-                                        style={styles.emptyStateButtonGradient}
-                                    >
-                                        <Ionicons name="add" size={20} color="white" />
-                                        <Text style={styles.emptyStateButtonText}>Adicionar Servidor</Text>
-                                    </LinearGradient>
+                                    <Ionicons name="add" size={20} color="white" />
+                                    <Text style={styles.emptyStateButtonText}>Adicionar Servidor</Text>
                                 </TouchableOpacity>
                             </View>
-                        </BlurView>
+                        </View>
                     </View>
                 )}
             </ScrollView>
@@ -308,143 +313,136 @@ const styles = StyleSheet.create({
     container: {
         flex: 1,
     },
-    backgroundGradient: {
-        position: 'absolute',
-        top: 0,
-        left: 0,
-        right: 0,
-        bottom: 0,
-    },
     scrollView: {
         flex: 1,
     },
     scrollContent: {
         paddingHorizontal: 20,
-        paddingTop: 60,
-        paddingBottom: 100,
+        paddingTop: 20,
     },
-    header: {
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-        alignItems: 'center',
+    welcomeSection: {
         marginBottom: 32,
-    },
-    greetingContainer: {
-        flex: 1,
     },
     greeting: {
         fontSize: 16,
-        color: 'rgba(255, 255, 255, 0.8)',
         fontWeight: '500',
+        marginBottom: 4,
     },
     userName: {
-        fontSize: 24,
-        color: 'white',
+        fontSize: 28,
         fontWeight: '700',
-        marginTop: 2,
+        marginBottom: 8,
+        letterSpacing: -0.5,
     },
-    notificationButton: {
-        padding: 4,
+    subtitle: {
+        fontSize: 16,
+        lineHeight: 22,
     },
-    notificationBackground: {
-        width: 40,
-        height: 40,
-        borderRadius: 20,
-        backgroundColor: 'rgba(255, 255, 255, 0.9)',
-        justifyContent: 'center',
-        alignItems: 'center',
-        position: 'relative',
+    statsSection: {
+        marginBottom: 32,
     },
-    notificationBadge: {
-        position: 'absolute',
-        top: 8,
-        right: 8,
-        width: 8,
-        height: 8,
-        borderRadius: 4,
-        backgroundColor: '#F44336',
+    sectionTitle: {
+        fontSize: 20,
+        fontWeight: '700',
+        marginBottom: 16,
+        letterSpacing: -0.3,
     },
-    quickStats: {
-        marginBottom: 28,
-    },
-    statsRow: {
+    statsGrid: {
         flexDirection: 'row',
+        flexWrap: 'wrap',
         justifyContent: 'space-between',
-        marginBottom: 12,
+        gap: 12,
     },
     statCard: {
-        flex: 1,
-        marginHorizontal: 6,
+        width: (width - 52) / 2,
         borderRadius: 16,
-        overflow: 'hidden',
-    },
-    statCardBlur: {
-        flex: 1,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.08,
+        shadowRadius: 12,
+        elevation: 4,
     },
     statCardContent: {
-        backgroundColor: 'rgba(255, 255, 255, 0.9)',
-        padding: 16,
+        padding: 20,
     },
-    statCardHeader: {
+    statHeader: {
         flexDirection: 'row',
         alignItems: 'center',
-        marginBottom: 8,
+        marginBottom: 12,
     },
     statIcon: {
-        width: 32,
-        height: 32,
-        borderRadius: 8,
+        width: 40,
+        height: 40,
+        borderRadius: 12,
         justifyContent: 'center',
         alignItems: 'center',
-        marginRight: 8,
+        marginRight: 12,
     },
     statTitle: {
         fontSize: 14,
-        color: '#666',
-        fontWeight: '500',
+        fontWeight: '600',
+        flex: 1,
     },
     statValue: {
-        fontSize: 20,
+        fontSize: 24,
         fontWeight: '700',
-        marginBottom: 2,
+        marginBottom: 4,
+        letterSpacing: -0.5,
     },
     statSubtitle: {
-        fontSize: 12,
-        color: '#999',
+        fontSize: 13,
+        fontWeight: '500',
     },
-    quickActionsSection: {
-        marginBottom: 28,
+    actionsSection: {
+        marginBottom: 32,
     },
-    sectionTitle: {
-        fontSize: 18,
-        fontWeight: '700',
-        color: 'white',
-        marginBottom: 16,
+    actionsGrid: {
+        gap: 12,
     },
-    quickActions: {
+    primaryAction: {
+        borderRadius: 16,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 8 },
+        shadowOpacity: 0.2,
+        shadowRadius: 16,
+        elevation: 8,
+        marginBottom: 12,
+    },
+    primaryActionContent: {
         flexDirection: 'row',
-        justifyContent: 'space-between',
+        alignItems: 'center',
+        justifyContent: 'center',
+        padding: 20,
+        gap: 12,
     },
-    actionButton: {
-        flex: 1,
-        marginHorizontal: 6,
+    primaryActionText: {
+        color: 'white',
+        fontSize: 16,
+        fontWeight: '600',
+        letterSpacing: 0.3,
+    },
+    secondaryAction: {
         borderRadius: 12,
-        overflow: 'hidden',
+        borderWidth: 1,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.05,
+        shadowRadius: 8,
+        elevation: 2,
     },
-    actionButtonGradient: {
+    secondaryActionContent: {
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'center',
         padding: 16,
+        gap: 8,
     },
-    actionButtonText: {
-        color: 'white',
+    secondaryActionText: {
         fontSize: 14,
         fontWeight: '600',
-        marginLeft: 8,
     },
-    recentSection: {
-        marginBottom: 20,
+    serversSection: {
+        marginBottom: 32,
     },
     sectionHeader: {
         flexDirection: 'row',
@@ -454,80 +452,90 @@ const styles = StyleSheet.create({
     },
     seeAllButton: {
         fontSize: 14,
-        color: 'rgba(255, 255, 255, 0.8)',
-        fontWeight: '500',
+        fontWeight: '600',
     },
-    recentServers: {
+    serversGrid: {
         flexDirection: 'row',
         flexWrap: 'wrap',
         justifyContent: 'space-between',
+        gap: 12,
     },
-    serverQuickCard: {
+    serverCard: {
         width: (width - 52) / 2,
-        marginBottom: 12,
-        borderRadius: 12,
-        backgroundColor: 'rgba(255, 255, 255, 0.9)',
-        overflow: 'hidden',
+        borderRadius: 16,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.08,
+        shadowRadius: 12,
+        elevation: 4,
     },
-    serverQuickCardContent: {
-        padding: 12,
+    serverCardContent: {
+        padding: 16,
     },
-    serverQuickHeader: {
+    serverHeader: {
         flexDirection: 'row',
         alignItems: 'center',
-        marginBottom: 6,
+        marginBottom: 8,
     },
     serverStatusDot: {
         width: 8,
         height: 8,
         borderRadius: 4,
-        marginRight: 6,
+        marginRight: 8,
     },
-    serverQuickName: {
-        fontSize: 14,
+    serverName: {
+        fontSize: 16,
         fontWeight: '600',
-        color: '#333',
         flex: 1,
     },
-    serverQuickHost: {
+    serverHost: {
         fontSize: 12,
-        color: '#666',
-        marginBottom: 8,
+        marginBottom: 12,
     },
-    serverQuickStats: {
+    serverStats: {
+        gap: 6,
+    },
+    statRow: {
         flexDirection: 'row',
         justifyContent: 'space-between',
-    },
-    serverQuickStat: {
         alignItems: 'center',
     },
-    serverQuickStatLabel: {
-        fontSize: 10,
-        color: '#999',
-        marginBottom: 2,
+    statLabel: {
+        fontSize: 12,
+        fontWeight: '500',
     },
-    serverQuickStatValue: {
+    statValueSmall: {
         fontSize: 12,
         fontWeight: '600',
-        color: '#333',
+    },
+    offlineStatus: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 6,
+    },
+    offlineText: {
+        fontSize: 12,
+        fontWeight: '600',
     },
     emptyState: {
         marginTop: 40,
     },
     emptyStateCard: {
         borderRadius: 20,
-        overflow: 'hidden',
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 8 },
+        shadowOpacity: 0.1,
+        shadowRadius: 16,
+        elevation: 8,
     },
     emptyStateContent: {
-        backgroundColor: 'rgba(255, 255, 255, 0.9)',
         padding: 40,
         alignItems: 'center',
     },
     emptyStateIcon: {
         width: 80,
         height: 80,
-        borderRadius: 40,
-        backgroundColor: 'rgba(102, 126, 234, 0.1)',
+        borderRadius: 20,
         justifyContent: 'center',
         alignItems: 'center',
         marginBottom: 20,
@@ -535,32 +543,27 @@ const styles = StyleSheet.create({
     emptyStateTitle: {
         fontSize: 20,
         fontWeight: '700',
-        color: '#333',
         marginBottom: 8,
         textAlign: 'center',
     },
     emptyStateSubtitle: {
         fontSize: 14,
-        color: '#666',
         textAlign: 'center',
         lineHeight: 20,
         marginBottom: 24,
     },
     emptyStateButton: {
-        borderRadius: 12,
-        overflow: 'hidden',
-    },
-    emptyStateButtonGradient: {
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'center',
         paddingHorizontal: 24,
         paddingVertical: 12,
+        borderRadius: 12,
+        gap: 8,
     },
     emptyStateButtonText: {
         color: 'white',
-        fontSize: 14,
+        fontSize: 16,
         fontWeight: '600',
-        marginLeft: 8,
     },
 });
