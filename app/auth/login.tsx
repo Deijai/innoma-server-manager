@@ -1,4 +1,4 @@
-// app/auth/login.tsx - Tela de Login Completa
+// app/auth/login.tsx - Design Original com Teclado Corrigido
 import { Ionicons } from '@expo/vector-icons';
 import { BlurView } from 'expo-blur';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -8,15 +8,13 @@ import {
     ActivityIndicator,
     Alert,
     Dimensions,
-    KeyboardAvoidingView,
-    Platform,
     ScrollView,
     StatusBar,
     StyleSheet,
     Text,
     TextInput,
     TouchableOpacity,
-    View,
+    View
 } from 'react-native';
 import { useAuth } from '../../contexts/AuthContext';
 
@@ -33,27 +31,32 @@ export default function Login() {
     const { signIn } = useAuth();
     const router = useRouter();
 
-    const handleLogin = async () => {
-        if (!email || !password) {
-            Alert.alert('Campos obrigatórios', 'Por favor, preencha email e senha');
-            return;
+    const validateForm = () => {
+        if (!email.trim()) {
+            Alert.alert('Campo obrigatório', 'Por favor, digite seu email');
+            return false;
         }
+
+        if (!password.trim()) {
+            Alert.alert('Campo obrigatório', 'Por favor, digite sua senha');
+            return false;
+        }
+
+        return true;
+    };
+
+    const handleLogin = async () => {
+        if (!validateForm()) return;
 
         setLoading(true);
         try {
-            await signIn(email, password);
+            await signIn(email.trim(), password);
             router.replace('/(tabs)/dashboard');
         } catch (error: any) {
             let errorMessage = 'Erro ao fazer login';
 
-            if (error.code === 'auth/user-not-found') {
-                errorMessage = 'Usuário não encontrado';
-            } else if (error.code === 'auth/wrong-password') {
-                errorMessage = 'Senha incorreta';
-            } else if (error.code === 'auth/invalid-email') {
-                errorMessage = 'Email inválido';
-            } else if (error.code === 'auth/too-many-requests') {
-                errorMessage = 'Muitas tentativas. Tente novamente mais tarde';
+            if (error.message) {
+                errorMessage = error.message;
             }
 
             Alert.alert('Erro', errorMessage);
@@ -77,159 +80,167 @@ export default function Login() {
                 <View style={styles.orb2} />
                 <View style={styles.orb3} />
 
-                <KeyboardAvoidingView
-                    style={styles.keyboardView}
-                    behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+                {/* SCROLL VIEW SEM KEYBOARD AVOIDING VIEW */}
+                <ScrollView
+                    style={styles.scrollView}
+                    contentContainerStyle={styles.scrollContent}
+                    showsVerticalScrollIndicator={false}
+                    keyboardShouldPersistTaps="handled"
+                    contentInsetAdjustmentBehavior="automatic"
                 >
-                    <ScrollView
-                        contentContainerStyle={styles.scrollContent}
-                        showsVerticalScrollIndicator={false}
-                        keyboardShouldPersistTaps="handled"
-                    >
-                        {/* Logo Section */}
-                        <View style={styles.logoSection}>
-                            <View style={styles.logoContainer}>
-                                <LinearGradient
-                                    colors={['#ffffff', '#f8f9fa']}
-                                    style={styles.logoBackground}
-                                >
-                                    <Text style={styles.logoIcon}>🖥️</Text>
-                                </LinearGradient>
-                            </View>
-                            <Text style={styles.appTitle}>Server Manager</Text>
-                            <Text style={styles.appSubtitle}>Gerencie seus servidores com facilidade</Text>
+                    {/* Logo Section */}
+                    <View style={styles.logoSection}>
+                        <View style={styles.logoContainer}>
+                            <LinearGradient
+                                colors={['#ffffff', '#f8f9fa']}
+                                style={styles.logoBackground}
+                            >
+                                <Text style={styles.logoIcon}>🖥️</Text>
+                            </LinearGradient>
                         </View>
+                        <Text style={styles.appTitle}>Server Manager</Text>
+                        <Text style={styles.appSubtitle}>Gerencie seus servidores com facilidade</Text>
+                    </View>
 
-                        {/* Login Form */}
-                        <BlurView intensity={20} style={styles.formContainer}>
-                            <View style={styles.formContent}>
-                                <Text style={styles.formTitle}>Bem-vindo de volta</Text>
-                                <Text style={styles.formSubtitle}>Entre na sua conta para continuar</Text>
+                    {/* Login Form */}
+                    <BlurView intensity={20} style={styles.formContainer}>
+                        <View style={styles.formContent}>
+                            <Text style={styles.formTitle}>Bem-vindo de volta</Text>
+                            <Text style={styles.formSubtitle}>Entre na sua conta para continuar</Text>
 
-                                {/* Email Input */}
-                                <View style={styles.inputGroup}>
-                                    <Text style={styles.inputLabel}>Email</Text>
-                                    <View style={[
-                                        styles.inputContainer,
-                                        emailFocused && styles.inputContainerFocused
-                                    ]}>
-                                        <Ionicons
-                                            name="mail-outline"
-                                            size={20}
-                                            color={emailFocused ? "#667eea" : "#8E8E93"}
-                                            style={styles.inputIcon}
-                                        />
-                                        <TextInput
-                                            style={styles.textInput}
-                                            value={email}
-                                            onChangeText={setEmail}
-                                            placeholder="seu@email.com"
-                                            placeholderTextColor="#8E8E93"
-                                            keyboardType="email-address"
-                                            autoCapitalize="none"
-                                            autoCorrect={false}
-                                            onFocus={() => setEmailFocused(true)}
-                                            onBlur={() => setEmailFocused(false)}
-                                        />
-                                    </View>
+                            {/* Email Input */}
+                            <View style={styles.inputGroup}>
+                                <Text style={styles.inputLabel}>Email</Text>
+                                <View style={[
+                                    styles.inputContainer,
+                                    emailFocused && styles.inputContainerFocused
+                                ]}>
+                                    <Ionicons
+                                        name="mail-outline"
+                                        size={20}
+                                        color={emailFocused ? "#667eea" : "#8E8E93"}
+                                        style={styles.inputIcon}
+                                    />
+                                    <TextInput
+                                        style={styles.textInput}
+                                        value={email}
+                                        onChangeText={setEmail}
+                                        placeholder="seu@email.com"
+                                        placeholderTextColor="#8E8E93"
+                                        keyboardType="email-address"
+                                        autoCapitalize="none"
+                                        autoCorrect={false}
+                                        onFocus={() => setEmailFocused(true)}
+                                        onBlur={() => setEmailFocused(false)}
+                                        editable={!loading}
+                                        returnKeyType="next"
+                                    />
                                 </View>
+                            </View>
 
-                                {/* Password Input */}
-                                <View style={styles.inputGroup}>
-                                    <Text style={styles.inputLabel}>Senha</Text>
-                                    <View style={[
-                                        styles.inputContainer,
-                                        passwordFocused && styles.inputContainerFocused
-                                    ]}>
-                                        <Ionicons
-                                            name="lock-closed-outline"
-                                            size={20}
-                                            color={passwordFocused ? "#667eea" : "#8E8E93"}
-                                            style={styles.inputIcon}
-                                        />
-                                        <TextInput
-                                            style={[styles.textInput, styles.passwordInput]}
-                                            value={password}
-                                            onChangeText={setPassword}
-                                            placeholder="Sua senha"
-                                            placeholderTextColor="#8E8E93"
-                                            secureTextEntry={!showPassword}
-                                            onFocus={() => setPasswordFocused(true)}
-                                            onBlur={() => setPasswordFocused(false)}
-                                        />
-                                        <TouchableOpacity
-                                            style={styles.eyeButton}
-                                            onPress={() => setShowPassword(!showPassword)}
-                                        >
-                                            <Ionicons
-                                                name={showPassword ? "eye-outline" : "eye-off-outline"}
-                                                size={20}
-                                                color="#8E8E93"
-                                            />
-                                        </TouchableOpacity>
-                                    </View>
-                                </View>
-
-                                {/* Forgot Password */}
-                                <TouchableOpacity style={styles.forgotPasswordButton}>
-                                    <Text style={styles.forgotPasswordText}>Esqueceu a senha?</Text>
-                                </TouchableOpacity>
-
-                                {/* Login Button */}
-                                <TouchableOpacity
-                                    style={[styles.loginButton, loading && styles.loginButtonDisabled]}
-                                    onPress={handleLogin}
-                                    disabled={loading}
-                                    activeOpacity={0.8}
-                                >
-                                    <LinearGradient
-                                        colors={loading ? ['#ccc', '#aaa'] : ['#667eea', '#764ba2']}
-                                        style={styles.loginButtonGradient}
+                            {/* Password Input */}
+                            <View style={styles.inputGroup}>
+                                <Text style={styles.inputLabel}>Senha</Text>
+                                <View style={[
+                                    styles.inputContainer,
+                                    passwordFocused && styles.inputContainerFocused
+                                ]}>
+                                    <Ionicons
+                                        name="lock-closed-outline"
+                                        size={20}
+                                        color={passwordFocused ? "#667eea" : "#8E8E93"}
+                                        style={styles.inputIcon}
+                                    />
+                                    <TextInput
+                                        style={[styles.textInput, styles.passwordInput]}
+                                        value={password}
+                                        onChangeText={setPassword}
+                                        placeholder="Sua senha"
+                                        placeholderTextColor="#8E8E93"
+                                        secureTextEntry={!showPassword}
+                                        onFocus={() => setPasswordFocused(true)}
+                                        onBlur={() => setPasswordFocused(false)}
+                                        editable={!loading}
+                                        returnKeyType="done"
+                                        onSubmitEditing={handleLogin}
+                                    />
+                                    <TouchableOpacity
+                                        style={styles.eyeButton}
+                                        onPress={() => setShowPassword(!showPassword)}
+                                        disabled={loading}
+                                        activeOpacity={0.7}
                                     >
-                                        {loading ? (
-                                            <ActivityIndicator color="white" size="small" />
-                                        ) : (
-                                            <>
-                                                <Text style={styles.loginButtonText}>Entrar</Text>
-                                                <Ionicons name="arrow-forward" size={18} color="white" />
-                                            </>
-                                        )}
-                                    </LinearGradient>
-                                </TouchableOpacity>
-
-                                {/* Divider */}
-                                <View style={styles.divider}>
-                                    <View style={styles.dividerLine} />
-                                    <Text style={styles.dividerText}>ou</Text>
-                                    <View style={styles.dividerLine} />
-                                </View>
-
-                                {/* Social Login Buttons */}
-                                <View style={styles.socialButtons}>
-                                    <TouchableOpacity style={styles.socialButton}>
-                                        <Ionicons name="logo-apple" size={20} color="#000" />
-                                        <Text style={styles.socialButtonText}>Apple</Text>
-                                    </TouchableOpacity>
-
-                                    <TouchableOpacity style={styles.socialButton}>
-                                        <Ionicons name="logo-google" size={20} color="#4285F4" />
-                                        <Text style={styles.socialButtonText}>Google</Text>
+                                        <Ionicons
+                                            name={showPassword ? "eye-outline" : "eye-off-outline"}
+                                            size={20}
+                                            color="#8E8E93"
+                                        />
                                     </TouchableOpacity>
                                 </View>
                             </View>
-                        </BlurView>
 
-                        {/* Register Link */}
-                        <View style={styles.registerSection}>
-                            <Text style={styles.registerText}>Não tem uma conta?</Text>
-                            <Link href="/auth/register" asChild>
-                                <TouchableOpacity>
-                                    <Text style={styles.registerLink}>Criar conta</Text>
+                            {/* Forgot Password */}
+                            <TouchableOpacity style={styles.forgotPasswordButton}>
+                                <Text style={styles.forgotPasswordText}>Esqueceu a senha?</Text>
+                            </TouchableOpacity>
+
+                            {/* Login Button */}
+                            <TouchableOpacity
+                                style={[styles.loginButton, loading && styles.loginButtonDisabled]}
+                                onPress={handleLogin}
+                                disabled={loading}
+                                activeOpacity={0.8}
+                            >
+                                <LinearGradient
+                                    colors={loading ? ['#ccc', '#aaa'] : ['#667eea', '#764ba2']}
+                                    style={styles.loginButtonGradient}
+                                >
+                                    {loading ? (
+                                        <ActivityIndicator color="white" size="small" />
+                                    ) : (
+                                        <>
+                                            <Text style={styles.loginButtonText}>Entrar</Text>
+                                            <Ionicons name="arrow-forward" size={18} color="white" />
+                                        </>
+                                    )}
+                                </LinearGradient>
+                            </TouchableOpacity>
+
+                            {/* Divider */}
+                            <View style={styles.divider}>
+                                <View style={styles.dividerLine} />
+                                <Text style={styles.dividerText}>ou</Text>
+                                <View style={styles.dividerLine} />
+                            </View>
+
+                            {/* Social Login Buttons */}
+                            <View style={styles.socialButtons}>
+                                <TouchableOpacity style={styles.socialButton}>
+                                    <Ionicons name="logo-apple" size={20} color="#000" />
+                                    <Text style={styles.socialButtonText}>Apple</Text>
                                 </TouchableOpacity>
-                            </Link>
+
+                                <TouchableOpacity style={styles.socialButton}>
+                                    <Ionicons name="logo-google" size={20} color="#4285F4" />
+                                    <Text style={styles.socialButtonText}>Google</Text>
+                                </TouchableOpacity>
+                            </View>
                         </View>
-                    </ScrollView>
-                </KeyboardAvoidingView>
+                    </BlurView>
+
+                    {/* Register Link */}
+                    <View style={styles.registerSection}>
+                        <Text style={styles.registerText}>Não tem uma conta?</Text>
+                        <Link href="/auth/register" asChild>
+                            <TouchableOpacity>
+                                <Text style={styles.registerLink}>Criar conta</Text>
+                            </TouchableOpacity>
+                        </Link>
+                    </View>
+
+                    {/* Extra padding for keyboard */}
+                    <View style={{ height: 100 }} />
+                </ScrollView>
             </View>
         </>
     );
@@ -273,7 +284,7 @@ const styles = StyleSheet.create({
         borderRadius: 40,
         backgroundColor: 'rgba(255, 255, 255, 0.08)',
     },
-    keyboardView: {
+    scrollView: {
         flex: 1,
     },
     scrollContent: {
@@ -357,8 +368,7 @@ const styles = StyleSheet.create({
         borderWidth: 1,
         borderColor: 'transparent',
         paddingHorizontal: 16,
-        height: 50,
-        //transition: 'all 0.2s ease',
+        minHeight: 50,
     },
     inputContainerFocused: {
         backgroundColor: 'white',
@@ -377,6 +387,7 @@ const styles = StyleSheet.create({
         fontSize: 16,
         color: '#1D1D1F',
         fontWeight: '400',
+        paddingVertical: 15,
     },
     passwordInput: {
         paddingRight: 40,
@@ -384,7 +395,10 @@ const styles = StyleSheet.create({
     eyeButton: {
         position: 'absolute',
         right: 16,
-        padding: 4,
+        width: 32,
+        height: 32,
+        justifyContent: 'center',
+        alignItems: 'center',
     },
     forgotPasswordButton: {
         alignItems: 'flex-end',

@@ -1,13 +1,14 @@
-// app/auth/register.tsx - Tela de Registro Completa
+// app/auth/register.tsx - DESIGN COMPLETO + TECLADO DEFINITIVAMENTE CORRIGIDO
 import { Ionicons } from '@expo/vector-icons';
 import { BlurView } from 'expo-blur';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Link, useRouter } from 'expo-router';
-import React, { useState } from 'react';
+import React, { useRef, useState } from 'react';
 import {
     ActivityIndicator,
     Alert,
     Dimensions,
+    Keyboard,
     KeyboardAvoidingView,
     Platform,
     ScrollView,
@@ -16,6 +17,7 @@ import {
     Text,
     TextInput,
     TouchableOpacity,
+    TouchableWithoutFeedback,
     View,
 } from 'react-native';
 import { useAuth } from '../../contexts/AuthContext';
@@ -36,12 +38,34 @@ export default function Register() {
     const [passwordFocused, setPasswordFocused] = useState(false);
     const [confirmPasswordFocused, setConfirmPasswordFocused] = useState(false);
 
+    // Refs para os inputs
+    const emailRef = useRef<TextInput>(null);
+    const passwordRef = useRef<TextInput>(null);
+    const confirmPasswordRef = useRef<TextInput>(null);
+    const scrollViewRef = useRef<ScrollView>(null);
+
     const { signUp } = useAuth();
     const router = useRouter();
 
     const validateForm = () => {
-        if (!email || !password || !confirmPassword) {
-            Alert.alert('Campos obrigatórios', 'Por favor, preencha todos os campos');
+        if (!email.trim()) {
+            Alert.alert('Campo obrigatório', 'Por favor, digite seu email');
+            return false;
+        }
+
+        if (!password.trim()) {
+            Alert.alert('Campo obrigatório', 'Por favor, digite sua senha');
+            return false;
+        }
+
+        if (!confirmPassword.trim()) {
+            Alert.alert('Campo obrigatório', 'Por favor, confirme sua senha');
+            return false;
+        }
+
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (!emailRegex.test(email.trim())) {
+            Alert.alert('Email inválido', 'Por favor, digite um email válido');
             return false;
         }
 
@@ -68,7 +92,7 @@ export default function Register() {
 
         setLoading(true);
         try {
-            await signUp(email, password);
+            await signUp(email.trim(), password);
             Alert.alert(
                 'Conta criada! 🎉',
                 'Bem-vindo ao Server Manager! Sua conta foi criada com sucesso.',
@@ -81,12 +105,8 @@ export default function Register() {
         } catch (error: any) {
             let errorMessage = 'Erro ao criar conta';
 
-            if (error.code === 'auth/email-already-in-use') {
-                errorMessage = 'Este email já está sendo usado';
-            } else if (error.code === 'auth/invalid-email') {
-                errorMessage = 'Email inválido';
-            } else if (error.code === 'auth/weak-password') {
-                errorMessage = 'Senha muito fraca';
+            if (error.message) {
+                errorMessage = error.message;
             }
 
             Alert.alert('Erro', errorMessage);
@@ -95,222 +115,282 @@ export default function Register() {
         }
     };
 
+    // Função para focar no próximo campo
+    const focusNextField = (nextRef: React.RefObject<TextInput>) => {
+        nextRef.current?.focus();
+    };
+
+    // Função para scroll quando focar
+    const handleInputFocus = (inputRef: React.RefObject<TextInput>) => {
+        setTimeout(() => {
+            inputRef.current?.measure((x, y, width, height, pageX, pageY) => {
+                scrollViewRef.current?.scrollTo({
+                    y: pageY - 100,
+                    animated: true
+                });
+            });
+        }, 100);
+    };
+
     return (
         <>
             <StatusBar barStyle="light-content" />
-            <View style={styles.container}>
-                {/* Background Gradient */}
-                <LinearGradient
-                    colors={['#4facfe', '#00f2fe']}
-                    style={styles.background}
-                />
+            <TouchableWithoutFeedback onPress={Keyboard.dismiss} accessible={false}>
+                <View style={styles.container}>
+                    {/* Background Gradient */}
+                    <LinearGradient
+                        colors={['#4facfe', '#00f2fe']}
+                        style={styles.background}
+                    />
 
-                {/* Floating orbs for decoration */}
-                <View style={styles.orb1} />
-                <View style={styles.orb2} />
-                <View style={styles.orb3} />
+                    {/* Floating orbs for decoration */}
+                    <View style={styles.orb1} />
+                    <View style={styles.orb2} />
+                    <View style={styles.orb3} />
 
-                <KeyboardAvoidingView
-                    style={styles.keyboardView}
-                    behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-                >
-                    <ScrollView
-                        contentContainerStyle={styles.scrollContent}
-                        showsVerticalScrollIndicator={false}
-                        keyboardShouldPersistTaps="handled"
+                    <KeyboardAvoidingView
+                        style={styles.keyboardView}
+                        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+                        keyboardVerticalOffset={0}
                     >
-                        {/* Back Button */}
-                        <TouchableOpacity
-                            style={styles.backButton}
-                            onPress={() => router.back()}
+                        <ScrollView
+                            ref={scrollViewRef}
+                            style={styles.scrollView}
+                            contentContainerStyle={styles.scrollContent}
+                            showsVerticalScrollIndicator={false}
+                            keyboardShouldPersistTaps="never"
+                            keyboardDismissMode="interactive"
+                            scrollEventThrottle={16}
                         >
-                            <View style={styles.backButtonBackground}>
-                                <Ionicons name="arrow-back" size={20} color="#4facfe" />
-                            </View>
-                        </TouchableOpacity>
-
-                        {/* Logo Section */}
-                        <View style={styles.logoSection}>
-                            <View style={styles.logoContainer}>
-                                <LinearGradient
-                                    colors={['#ffffff', '#f8f9fa']}
-                                    style={styles.logoBackground}
-                                >
-                                    <Text style={styles.logoIcon}>🖥️</Text>
-                                </LinearGradient>
-                            </View>
-                            <Text style={styles.appTitle}>Criar Conta</Text>
-                            <Text style={styles.appSubtitle}>Junte-se ao Server Manager hoje</Text>
-                        </View>
-
-                        {/* Register Form */}
-                        <BlurView intensity={20} style={styles.formContainer}>
-                            <View style={styles.formContent}>
-                                <Text style={styles.formTitle}>Vamos começar</Text>
-                                <Text style={styles.formSubtitle}>Crie sua conta em poucos segundos</Text>
-
-                                {/* Email Input */}
-                                <View style={styles.inputGroup}>
-                                    <Text style={styles.inputLabel}>Email</Text>
-                                    <View style={[
-                                        styles.inputContainer,
-                                        emailFocused && styles.inputContainerFocused
-                                    ]}>
-                                        <Ionicons
-                                            name="mail-outline"
-                                            size={20}
-                                            color={emailFocused ? "#4facfe" : "#8E8E93"}
-                                            style={styles.inputIcon}
-                                        />
-                                        <TextInput
-                                            style={styles.textInput}
-                                            value={email}
-                                            onChangeText={setEmail}
-                                            placeholder="seu@email.com"
-                                            placeholderTextColor="#8E8E93"
-                                            keyboardType="email-address"
-                                            autoCapitalize="none"
-                                            autoCorrect={false}
-                                            onFocus={() => setEmailFocused(true)}
-                                            onBlur={() => setEmailFocused(false)}
-                                        />
-                                    </View>
+                            {/* Back Button */}
+                            <TouchableOpacity
+                                style={styles.backButton}
+                                onPress={() => router.back()}
+                            >
+                                <View style={styles.backButtonBackground}>
+                                    <Ionicons name="arrow-back" size={20} color="#4facfe" />
                                 </View>
+                            </TouchableOpacity>
 
-                                {/* Password Input */}
-                                <View style={styles.inputGroup}>
-                                    <Text style={styles.inputLabel}>Senha</Text>
-                                    <View style={[
-                                        styles.inputContainer,
-                                        passwordFocused && styles.inputContainerFocused
-                                    ]}>
-                                        <Ionicons
-                                            name="lock-closed-outline"
-                                            size={20}
-                                            color={passwordFocused ? "#4facfe" : "#8E8E93"}
-                                            style={styles.inputIcon}
-                                        />
-                                        <TextInput
-                                            style={[styles.textInput, styles.passwordInput]}
-                                            value={password}
-                                            onChangeText={setPassword}
-                                            placeholder="Mínimo 6 caracteres"
-                                            placeholderTextColor="#8E8E93"
-                                            secureTextEntry={!showPassword}
-                                            onFocus={() => setPasswordFocused(true)}
-                                            onBlur={() => setPasswordFocused(false)}
-                                        />
-                                        <TouchableOpacity
-                                            style={styles.eyeButton}
-                                            onPress={() => setShowPassword(!showPassword)}
-                                        >
-                                            <Ionicons
-                                                name={showPassword ? "eye-outline" : "eye-off-outline"}
-                                                size={20}
-                                                color="#8E8E93"
-                                            />
-                                        </TouchableOpacity>
-                                    </View>
-                                </View>
-
-                                {/* Confirm Password Input */}
-                                <View style={styles.inputGroup}>
-                                    <Text style={styles.inputLabel}>Confirmar Senha</Text>
-                                    <View style={[
-                                        styles.inputContainer,
-                                        confirmPasswordFocused && styles.inputContainerFocused
-                                    ]}>
-                                        <Ionicons
-                                            name="lock-closed-outline"
-                                            size={20}
-                                            color={confirmPasswordFocused ? "#4facfe" : "#8E8E93"}
-                                            style={styles.inputIcon}
-                                        />
-                                        <TextInput
-                                            style={[styles.textInput, styles.passwordInput]}
-                                            value={confirmPassword}
-                                            onChangeText={setConfirmPassword}
-                                            placeholder="Repita sua senha"
-                                            placeholderTextColor="#8E8E93"
-                                            secureTextEntry={!showConfirmPassword}
-                                            onFocus={() => setConfirmPasswordFocused(true)}
-                                            onBlur={() => setConfirmPasswordFocused(false)}
-                                        />
-                                        <TouchableOpacity
-                                            style={styles.eyeButton}
-                                            onPress={() => setShowConfirmPassword(!showConfirmPassword)}
-                                        >
-                                            <Ionicons
-                                                name={showConfirmPassword ? "eye-outline" : "eye-off-outline"}
-                                                size={20}
-                                                color="#8E8E93"
-                                            />
-                                        </TouchableOpacity>
-                                    </View>
-                                </View>
-
-                                {/* Terms Checkbox */}
-                                <TouchableOpacity
-                                    style={styles.termsContainer}
-                                    onPress={() => setAcceptTerms(!acceptTerms)}
-                                >
-                                    <View style={[styles.checkbox, acceptTerms && styles.checkboxChecked]}>
-                                        {acceptTerms && (
-                                            <Ionicons name="checkmark" size={14} color="white" />
-                                        )}
-                                    </View>
-                                    <Text style={styles.termsText}>
-                                        Li e aceito os{' '}
-                                        <Text style={styles.termsLink}>Termos de Uso</Text>
-                                        {' '}e{' '}
-                                        <Text style={styles.termsLink}>Política de Privacidade</Text>
-                                    </Text>
-                                </TouchableOpacity>
-
-                                {/* Register Button */}
-                                <TouchableOpacity
-                                    style={[styles.registerButton, loading && styles.registerButtonDisabled]}
-                                    onPress={handleRegister}
-                                    disabled={loading}
-                                    activeOpacity={0.8}
-                                >
+                            {/* Logo Section */}
+                            <View style={styles.logoSection}>
+                                <View style={styles.logoContainer}>
                                     <LinearGradient
-                                        colors={loading ? ['#ccc', '#aaa'] : ['#4facfe', '#00f2fe']}
-                                        style={styles.registerButtonGradient}
+                                        colors={['#ffffff', '#f8f9fa']}
+                                        style={styles.logoBackground}
                                     >
-                                        {loading ? (
-                                            <ActivityIndicator color="white" size="small" />
-                                        ) : (
-                                            <>
-                                                <Text style={styles.registerButtonText}>Criar Conta</Text>
-                                                <Ionicons name="person-add" size={18} color="white" />
-                                            </>
-                                        )}
+                                        <Text style={styles.logoIcon}>🖥️</Text>
                                     </LinearGradient>
-                                </TouchableOpacity>
-
-                                {/* Security Info */}
-                                <View style={styles.securityInfo}>
-                                    <Ionicons name="shield-checkmark" size={16} color="#4CAF50" />
-                                    <Text style={styles.securityText}>
-                                        Seus dados estão protegidos com criptografia de ponta
-                                    </Text>
                                 </View>
+                                <Text style={styles.appTitle}>Criar Conta</Text>
+                                <Text style={styles.appSubtitle}>Junte-se ao Server Manager hoje</Text>
                             </View>
-                        </BlurView>
 
-                        {/* Login Link */}
-                        <View style={styles.loginSection}>
-                            <Text style={styles.loginText}>Já tem uma conta?</Text>
-                            <Link href="/auth/login" asChild>
-                                <TouchableOpacity>
-                                    <Text style={styles.loginLink}>Fazer login</Text>
-                                </TouchableOpacity>
-                            </Link>
-                        </View>
-                    </ScrollView>
-                </KeyboardAvoidingView>
-            </View>
+                            {/* Register Form */}
+                            <BlurView intensity={20} style={styles.formContainer}>
+                                <View style={styles.formContent}>
+                                    <Text style={styles.formTitle}>Vamos começar</Text>
+                                    <Text style={styles.formSubtitle}>Crie sua conta em poucos segundos</Text>
+
+                                    {/* Email Input */}
+                                    <View style={styles.inputGroup}>
+                                        <Text style={styles.inputLabel}>Email</Text>
+                                        <TouchableWithoutFeedback>
+                                            <View style={[
+                                                styles.inputContainer,
+                                                emailFocused && styles.inputContainerFocused
+                                            ]}>
+                                                <Ionicons
+                                                    name="mail-outline"
+                                                    size={20}
+                                                    color={emailFocused ? "#4facfe" : "#8E8E93"}
+                                                    style={styles.inputIcon}
+                                                />
+                                                <TextInput
+                                                    ref={emailRef}
+                                                    style={styles.textInput}
+                                                    value={email}
+                                                    onChangeText={setEmail}
+                                                    placeholder="seu@email.com"
+                                                    placeholderTextColor="#8E8E93"
+                                                    keyboardType="email-address"
+                                                    autoCapitalize="none"
+                                                    autoCorrect={false}
+                                                    onFocus={() => {
+                                                        setEmailFocused(true);
+                                                        handleInputFocus(emailRef);
+                                                    }}
+                                                    onBlur={() => setEmailFocused(false)}
+                                                    editable={!loading}
+                                                    returnKeyType="next"
+                                                    onSubmitEditing={() => focusNextField(passwordRef)}
+                                                />
+                                            </View>
+                                        </TouchableWithoutFeedback>
+                                    </View>
+
+                                    {/* Password Input */}
+                                    <View style={styles.inputGroup}>
+                                        <Text style={styles.inputLabel}>Senha</Text>
+                                        <TouchableWithoutFeedback>
+                                            <View style={[
+                                                styles.inputContainer,
+                                                passwordFocused && styles.inputContainerFocused
+                                            ]}>
+                                                <Ionicons
+                                                    name="lock-closed-outline"
+                                                    size={20}
+                                                    color={passwordFocused ? "#4facfe" : "#8E8E93"}
+                                                    style={styles.inputIcon}
+                                                />
+                                                <TextInput
+                                                    ref={passwordRef}
+                                                    style={[styles.textInput, styles.passwordInput]}
+                                                    value={password}
+                                                    onChangeText={setPassword}
+                                                    placeholder="Mínimo 6 caracteres"
+                                                    placeholderTextColor="#8E8E93"
+                                                    secureTextEntry={!showPassword}
+                                                    onFocus={() => {
+                                                        setPasswordFocused(true);
+                                                        handleInputFocus(passwordRef);
+                                                    }}
+                                                    onBlur={() => setPasswordFocused(false)}
+                                                    editable={!loading}
+                                                    returnKeyType="next"
+                                                    onSubmitEditing={() => focusNextField(confirmPasswordRef)}
+                                                />
+                                                <TouchableOpacity
+                                                    style={styles.eyeButton}
+                                                    onPress={() => setShowPassword(!showPassword)}
+                                                    disabled={loading}
+                                                    activeOpacity={0.7}
+                                                >
+                                                    <Ionicons
+                                                        name={showPassword ? "eye-outline" : "eye-off-outline"}
+                                                        size={20}
+                                                        color="#8E8E93"
+                                                    />
+                                                </TouchableOpacity>
+                                            </View>
+                                        </TouchableWithoutFeedback>
+                                    </View>
+
+                                    {/* Confirm Password Input */}
+                                    <View style={styles.inputGroup}>
+                                        <Text style={styles.inputLabel}>Confirmar Senha</Text>
+                                        <TouchableWithoutFeedback>
+                                            <View style={[
+                                                styles.inputContainer,
+                                                confirmPasswordFocused && styles.inputContainerFocused
+                                            ]}>
+                                                <Ionicons
+                                                    name="lock-closed-outline"
+                                                    size={20}
+                                                    color={confirmPasswordFocused ? "#4facfe" : "#8E8E93"}
+                                                    style={styles.inputIcon}
+                                                />
+                                                <TextInput
+                                                    ref={confirmPasswordRef}
+                                                    style={[styles.textInput, styles.passwordInput]}
+                                                    value={confirmPassword}
+                                                    onChangeText={setConfirmPassword}
+                                                    placeholder="Repita sua senha"
+                                                    placeholderTextColor="#8E8E93"
+                                                    secureTextEntry={!showConfirmPassword}
+                                                    onFocus={() => {
+                                                        setConfirmPasswordFocused(true);
+                                                        handleInputFocus(confirmPasswordRef);
+                                                    }}
+                                                    onBlur={() => setConfirmPasswordFocused(false)}
+                                                    editable={!loading}
+                                                    returnKeyType="done"
+                                                    onSubmitEditing={handleRegister}
+                                                />
+                                                <TouchableOpacity
+                                                    style={styles.eyeButton}
+                                                    onPress={() => setShowConfirmPassword(!showConfirmPassword)}
+                                                    disabled={loading}
+                                                    activeOpacity={0.7}
+                                                >
+                                                    <Ionicons
+                                                        name={showConfirmPassword ? "eye-outline" : "eye-off-outline"}
+                                                        size={20}
+                                                        color="#8E8E93"
+                                                    />
+                                                </TouchableOpacity>
+                                            </View>
+                                        </TouchableWithoutFeedback>
+                                    </View>
+
+                                    {/* Terms Checkbox */}
+                                    <TouchableOpacity
+                                        style={styles.termsContainer}
+                                        onPress={() => setAcceptTerms(!acceptTerms)}
+                                        disabled={loading}
+                                        activeOpacity={0.7}
+                                    >
+                                        <View style={[styles.checkbox, acceptTerms && styles.checkboxChecked]}>
+                                            {acceptTerms && (
+                                                <Ionicons name="checkmark" size={14} color="white" />
+                                            )}
+                                        </View>
+                                        <Text style={styles.termsText}>
+                                            Li e aceito os{' '}
+                                            <Text style={styles.termsLink}>Termos de Uso</Text>
+                                            {' '}e{' '}
+                                            <Text style={styles.termsLink}>Política de Privacidade</Text>
+                                        </Text>
+                                    </TouchableOpacity>
+
+                                    {/* Register Button */}
+                                    <TouchableOpacity
+                                        style={[styles.registerButton, loading && styles.registerButtonDisabled]}
+                                        onPress={handleRegister}
+                                        disabled={loading}
+                                        activeOpacity={0.8}
+                                    >
+                                        <LinearGradient
+                                            colors={loading ? ['#ccc', '#aaa'] : ['#4facfe', '#00f2fe']}
+                                            style={styles.registerButtonGradient}
+                                        >
+                                            {loading ? (
+                                                <ActivityIndicator color="white" size="small" />
+                                            ) : (
+                                                <>
+                                                    <Text style={styles.registerButtonText}>Criar Conta</Text>
+                                                    <Ionicons name="person-add" size={18} color="white" />
+                                                </>
+                                            )}
+                                        </LinearGradient>
+                                    </TouchableOpacity>
+
+                                    {/* Security Info */}
+                                    <View style={styles.securityInfo}>
+                                        <Ionicons name="shield-checkmark" size={16} color="#4CAF50" />
+                                        <Text style={styles.securityText}>
+                                            Seus dados estão protegidos com criptografia de ponta
+                                        </Text>
+                                    </View>
+                                </View>
+                            </BlurView>
+
+                            {/* Login Link */}
+                            <View style={styles.loginSection}>
+                                <Text style={styles.loginText}>Já tem uma conta?</Text>
+                                <Link href="/auth/login" asChild>
+                                    <TouchableOpacity>
+                                        <Text style={styles.loginLink}>Fazer login</Text>
+                                    </TouchableOpacity>
+                                </Link>
+                            </View>
+
+                            {/* Extra space for keyboard */}
+                            <View style={styles.extraSpace} />
+                        </ScrollView>
+                    </KeyboardAvoidingView>
+                </View>
+            </TouchableWithoutFeedback>
         </>
     );
 }
@@ -354,6 +434,9 @@ const styles = StyleSheet.create({
         backgroundColor: 'rgba(255, 255, 255, 0.08)',
     },
     keyboardView: {
+        flex: 1,
+    },
+    scrollView: {
         flex: 1,
     },
     scrollContent: {
@@ -454,7 +537,7 @@ const styles = StyleSheet.create({
         borderWidth: 1,
         borderColor: 'transparent',
         paddingHorizontal: 16,
-        height: 50,
+        minHeight: 50,
     },
     inputContainerFocused: {
         backgroundColor: 'white',
@@ -473,6 +556,9 @@ const styles = StyleSheet.create({
         fontSize: 16,
         color: '#1D1D1F',
         fontWeight: '400',
+        paddingVertical: 15,
+        includeFontPadding: false,
+        textAlignVertical: 'center',
     },
     passwordInput: {
         paddingRight: 40,
@@ -480,7 +566,10 @@ const styles = StyleSheet.create({
     eyeButton: {
         position: 'absolute',
         right: 16,
-        padding: 4,
+        width: 32,
+        height: 32,
+        justifyContent: 'center',
+        alignItems: 'center',
     },
     termsContainer: {
         flexDirection: 'row',
@@ -569,5 +658,8 @@ const styles = StyleSheet.create({
         fontSize: 15,
         color: 'white',
         fontWeight: '600',
+    },
+    extraSpace: {
+        height: Platform.OS === 'ios' ? 200 : 150,
     },
 });
